@@ -1,11 +1,11 @@
-#Requires AutoHotkey v2.0
+﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
 Persistent(true)
 InstallKeybdHook()
 
 ; =============================================================================
-;  VimWindows - تجربة اختصارات Vimium لنظام ويندوز
-;  Ctrl+Win = NORMAL MODE | i أو Esc = INSERT MODE
+;  VimWindows - Vimium for Windows
+;  Ctrl+Win or Home = NORMAL MODE | i / Esc = INSERT MODE
 ; =============================================================================
 
 global VimMode         := false
@@ -15,11 +15,37 @@ global AutoScrollState := 0     ; 0 = متوقف, 1 = لأسفل, -1 = لأعل�
 global ScrollSpeed     := 5     ; السرعة من 1 إلى 10 (الافتراضي 5)
 global ScrollAccum     := 0.0   ; مجمع الإزاحة الكسرية للسرعات البطيئة جداً
 
+; قائمة المتصفحات المستثناة تلقائياً (حيث تعمل إضافة Vimium الأصلية)
+global ExcludedBrowsers := [
+    "chrome.exe",
+    "msedge.exe",
+    "brave.exe",
+    "firefox.exe",
+    "zen.exe",
+    "opera.exe",
+    "vivaldi.exe",
+    "arc.exe"
+]
+
+IsExcludedApp() {
+    global ExcludedBrowsers
+    try {
+        activeProc := WinGetProcessName("A")
+        for app in ExcludedBrowsers {
+            if (StrLower(activeProc) = StrLower(app))
+                return true
+        }
+    }
+    return false
+}
+
 ToggleVimMode() {
     global VimMode
     VimMode := !VimMode
-    if (!VimMode)
+    if (!VimMode) {
         StopAutoScroll()
+        ClearHints()
+    }
     ShowMode()
 }
 
@@ -39,17 +65,18 @@ ShowMode() {
 exitVim() {
     global VimMode
     StopAutoScroll()
+    ClearHints()
     VimMode := false
     ShowMode()
 }
 
 ; =============================================================================
-;  دوال التمرير التلقائي فائق النعومة (60 FPS Smooth Auto-Scroll)
+;  دوال التمرير التلقائي الانسيابي (Target ~60 Hz Smooth Micro-Scrolling)
 ; =============================================================================
 
 GetScrollDelta(spd) {
     spd := Max(1, Min(10, spd))
-    ; قيم الإزاحة الميكروية في كل إطار بتردد 60 FPS
+    ; قيم الإزاحة الميكروية في كل إطار بتردد مستهدف ~60 هرتز
     ; السرعة 1: 0.125 ديلتا (انزلاق فائق البطء والتأني بالملليمتر)
     ; السرعة 5: 1.000 ديلتا (السرعة الافتراضية المتزنة)
     ; السرعة 10: 5.250 ديلتا
@@ -85,7 +112,7 @@ StartAutoScroll(dir) {
     
     AutoScrollState := dir
     ScrollAccum := 0.0
-    ; تفعيل المؤقت بتردد 60 إطار في الثانية (كل 16 مللي ثانية) لانسيابية تامة
+    ; تفعيل المؤقت بتردد مستهدف ~60 هرتز (كل 16 مللي ثانية) لانسيابية الحركة
     SetTimer(DoAutoScroll, 0)
     SetTimer(DoAutoScroll, 16)
     ShowScrollStatus()
@@ -140,19 +167,165 @@ ShowScrollStatus() {
 }
 
 ; =============================================================================
-#HotIf VimMode and !WinActive("ahk_exe chrome.exe")
+;  محرك وضع التلميحات التفاعلي (Vimium Native Hint Mode Engine)
+; =============================================================================
+
+global HintGuis := []
+global HintMap  := Map()
+
+GenerateHintKeys(count) {
+    chars := ["a", "s", "d", "f", "g", "h", "j", "k", "l", "q", "w", "e", "r", "t", "y", "u", "i", "o", "p", "z", "x", "c", "v", "b", "n", "m"]
+    keys := []
+    
+    if (count <= chars.Length) {
+        Loop count
+            keys.Push(chars[A_Index])
+        return keys
+    }
+    
+    for c1 in chars {
+        for c2 in chars {
+            keys.Push(c1 . c2)
+            if (keys.Length >= count)
+                return keys
+        }
+    }
+    return keys
+}
+
+ClearHints() {
+    global HintGuis, HintMap
+    for g in HintGuis {
+        try g.Destroy()
+    }
+    HintGuis := []
+    HintMap.Clear()
+}
+
+StartHintMode(clickType := "Left") {
+    global HintGuis, HintMap, VimMode
+    if (!VimMode)
+        return
+    
+    StopAutoScroll()
+    ClearHints()
+    
+    activeHwnd := WinExist("A")
+    if (!activeHwnd)
+        return
+    
+    WinGetPos(&winX, &winY, &winW, &winH, activeHwnd)
+    ctrlHwnds := WinGetControlsHwnd(activeHwnd)
+    
+    elements := []
+    for h in ctrlHwnds {
+        try {
+            if (!DllCall("IsWindowVisible", "Ptr", h))
+                continue
+            ControlGetPos(&cX, &cY, &cW, &cH, h, activeHwnd)
+            if (cW < 8 || cH < 8 || cX < 0 || cY < 0 || cX > winW || cY > winH)
+                continue
+            
+            screenX := winX + cX
+            screenY := winY + cY
+            
+            elements.Push({
+                hwnd: h,
+                x: screenX,
+                y: screenY,
+                w: cW,
+                h: cH,
+                centerX: screenX + (cW // 2),
+                centerY: screenY + (cH // 2)
+            })
+        }
+    }
+    
+    if (elements.Length == 0) {
+        ToolTip("⚠️ لم يتم العثور على عناصر تفاعلية في النافذة", 10, 10)
+        SetTimer(() => ToolTip(), -1500)
+        return
+    }
+    
+    if (elements.Length > 80)
+        elements.Length := 80
+        
+    hintKeys := GenerateHintKeys(elements.Length)
+    
+    Loop elements.Length {
+        el := elements[A_Index]
+        key := hintKeys[A_Index]
+        HintMap[key] := el
+        
+        hintGui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border +E0x20", "VimHint")
+        hintGui.BackColor := "FFEB3B"  ; أصفر تلميحات Vimium
+        hintGui.SetFont("s9 bold cBlack", "Consolas")
+        hintGui.MarginX := 3
+        hintGui.MarginY := 1
+        hintGui.Add("Text", "Center", StrUpper(key))
+        
+        showX := Max(0, el.x)
+        showY := Max(0, el.y)
+        hintGui.Show("x" . showX . " y" . showY . " NoActivate AutoSize")
+        HintGuis.Push(hintGui)
+    }
+    
+    ih := InputHook("T5", "{Escape}{Space}")
+    ih.VisibleNonText := false
+    
+    typed := ""
+    ih.OnChar := (hook, char) => (
+        typed .= StrLower(char),
+        CheckHintMatch(typed, hook, clickType)
+    )
+    ih.OnEnd := (hook) => ClearHints()
+    ih.Start()
+}
+
+CheckHintMatch(typed, hook, clickType) {
+    global HintMap
+    if (HintMap.Has(typed)) {
+        el := HintMap[typed]
+        hook.Stop()
+        ClearHints()
+        
+        CoordMode("Mouse", "Screen")
+        if (clickType == "Right")
+            Click(el.centerX, el.centerY, "Right")
+        else
+            Click(el.centerX, el.centerY, "Left")
+    } else {
+        hasPrefix := false
+        for k in HintMap {
+            if (SubStr(k, 1, StrLen(typed)) == typed) {
+                hasPrefix := true
+                break
+            }
+        }
+        if (!hasPrefix) {
+            hook.Stop()
+            ClearHints()
+        }
+    }
+}
+
+; =============================================================================
+#HotIf VimMode and !IsExcludedApp()
 
 ; ----- إيقاف NORMAL MODE (فقط i و Esc) -----
 Escape:: {
     global AutoScrollState
     if (AutoScrollState != 0)
         StopAutoScroll()
-    else
+    else {
+        ClearHints()
         exitVim()
+    }
 }
 
 i:: {
     StopAutoScroll()
+    ClearHints()
     exitVim()
 }
 
@@ -212,6 +385,10 @@ g:: {
     SendInput("^{End}")                ; G = أسفل الصفحة
 }
 
+; ----- وضع التلميحات التفاعلي (Hint Mode) -----
+f:: StartHintMode("Left")              ; f = إظهار تلميحات العناصر والنقر عليها
++f:: StartHintMode("Right")            ; F = إظهار التلميحات والنقر بزر الماوس الأيمن
+
 ; ----- التنقل بين أقسام التطبيق والتحكم بالسرعة -----
 ]::{
     global AutoScrollState
@@ -254,12 +431,14 @@ x::  SendInput("^w")                   ; x = إغلاق تبويب
 +k:: SendInput("^{Tab}")               ; K = تبويب تالي
 +w:: SendInput("^n")                   ; W = نافذة جديدة
 
-; ----- التحديث والبحث -----
+; ----- التحديث والبحث في النظام والتطبيقات -----
 r::  SendInput("{F5}")                 ; r = Reload
 /:: {
     exitVim()
-    SendInput("^f")                    ; / = بحث
+    SendInput("^f")                    ; / = بحث في التطبيق
 }
+s::  SendInput("#s")                   ; s = بحث ويندوز الشامل (Windows Search)
++s:: SendInput("^f")                   ; S = بحث داخل التطبيق (In-App Search)
 n::  SendInput("{F3}")                 ; n = نتيجة تالية
 +n:: SendInput("+{F3}")                ; N = نتيجة سابقة
 
@@ -273,13 +452,7 @@ y:: {
 }
 p::  SendInput("^v")                   ; p = لصق
 
-; ----- التفاعل والبحث في الشاشة -----
-f::  SendInput("^m")                   ; f = تفاعل الشاشة
-+f:: SendInput("^+m")                  ; F = تفاعل الشاشة الموسع
-s::  SendInput("{Ctrl down}{Alt down}{Alt up}{Ctrl up}") ; s = البحث العام
-+s:: SendInput("{Ctrl down}{Alt down}{Shift down}{Shift up}{Alt up}{Ctrl up}") ; S = البحث داخل النافذة
-
-; ----- Vomnibar (شريط العنوان) -----
+; ----- Vomnibar (شريط العنوان والروابط) -----
 o:: {
     exitVim()
     SendInput("^l")
@@ -311,9 +484,12 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "Ctrl+Win أو Home → تفعيل/إيقاف NORMAL MODE`n"
           . "i / Esc  → INSERT MODE`n`n"
+          . "🎯 وضع التلميحات (Hint Mode):`n"
+          . "  f       → إظهار تلميحات العناصر والنقر عليها`n"
+          . "  F       → النقر بزر الماوس الأيمن على العنصر`n`n"
           . "📜 التمرير التلقائي (Auto-Scroll):`n"
-          . "  v / PgDn / Ctrl+j / Space → تمرير تلقائي لأسفل ⏬`n"
-          . "  V / PgUp / Ctrl+k         → تمرير تلقائي لأعلى ⏫`n"
+          . "  v / PgDn / Space → تمرير تلقائي لأسفل ⏬`n"
+          . "  V / PgUp         → تمرير تلقائي لأعلى ⏫`n"
           . "  + / - أو ] / [     → تسريع / تبطيء التمرير`n"
           . "  Space / Esc / أي زر→ إيقاف التمرير التلقائي`n`n"
           . "📜 التمرير اليدوي (Vimium):`n"
@@ -329,10 +505,9 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
           . "  J/K     → التبويب السابق/التالي`n"
           . "  H/L     → التاريخ السابق/التالي`n"
           . "  r       → تحديث الصفحة`n`n"
-          . "🔍 البحث والتفاعل:`n"
-          . "  s       → البحث العام`n"
-          . "  S       → بحث داخل النافذة`n"
-          . "  f/F     → تفاعل بالشاشة`n`n"
+          . "🔍 البحث:`n"
+          . "  s       → بحث ويندوز الشامل (Win+S)`n"
+          . "  S أو /  → بحث داخل التطبيق (Ctrl+F)`n`n"
           . "🎵 الصوت والميديا:`n"
           . "  Ctrl+↑↓ → رفع/خفض الصوت`n"
           . "  Alt+0   → كتم الصوت`n"

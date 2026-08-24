@@ -1,14 +1,15 @@
-# 🟢 VimWindows
+﻿# 🟢 VimWindows
 
 <p align="center">
-  <b>تجربة اختصارات Vimium الكاملة على مستوى نظام ويندوز مع تمرير تلقائي انسيابي فائق النعومة (60 FPS) ومثبت ذكي بنقرة واحدة</b>
+  <b>تجربة اختصارات وملاحة Vimium المتكاملة على مستوى نظام ويندوز مع وضع التلميحات (Hint Mode) والتمرير الانسيابي</b>
   <br>
-  <i>Vimium-style keyboard navigation & 60 FPS smooth auto-scrolling for the entire Windows OS</i>
+  <i>Vimium-style keyboard navigation, native UI Hint Mode & smooth micro-scrolling for the entire Windows OS</i>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/AutoHotkey-v2.0+-green.svg" alt="AutoHotkey v2">
   <img src="https://img.shields.io/badge/Platform-Windows-blue.svg" alt="Windows">
+  <img src="https://img.shields.io/badge/Architecture-Modular-purple.svg" alt="Modular">
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
   <img src="https://img.shields.io/badge/Status-Active-brightgreen.svg" alt="Active">
 </p>
@@ -16,69 +17,87 @@
 ---
 
 ## 📖 جدول المحتويات (Table of Contents)
-- [المميزات الرئيسية (Key Features)](#-المميزات-الرئيسية-key-features)
-- [التثبيت السريع والذكي (1-Click Smart Installation)](#-التثبيت-السريع-والذكي-1-click-smart-installation)
+- [معمارية المشروع والمميزات الرئيسية (Architecture & Key Features)](#-معمارية-المشروع-والمميزات-الرئيسية-architecture--key-features)
+- [التثبيت السريع والذكي (1-Click Safe Installation)](#-التثبيت-السريع-والذكي-1-click-safe-installation)
 - [جدول الاختصارات الكامل (Shortcuts Cheat Sheet)](#-جدول-الاختصارات-الكامل-shortcuts-cheat-sheet)
-  - [1. التمرير التلقائي الانسيابي (Smooth Auto-Scroll)](#1-التمرير-التلقائي-الانسيابي-smooth-auto-scroll)
-  - [2. التمرير اليدوي (Manual Scroll)](#2-التمرير-اليدوي-manual-scroll)
-  - [3. التنقل بين أقسام التطبيق (App Sections Navigation)](#3-التنقل-بين-أقسام-التطبيق-app-sections-navigation)
-  - [4. إدارة التبويبات والتاريخ (Tabs & History)](#4-إدارة-التبويبات-والتاريخ-tabs--history)
-  - [5. البحث والتفاعل في الشاشة (Screen Navigation & Search)](#5-البحث-والتفاعل-في-الشاشة-screen-navigation--search)
-  - [6. النسخ واللصق والتكبير (Clipboard & Zoom)](#6-النسخ-واللصق-والتكبير-clipboard--zoom)
-  - [7. الصوت والوسائط (Media & Volume)](#7-الصوت-والوسائط-media--volume)
-- [إلغاء التثبيت (Uninstallation)](#-إلغاء-التثبيت-uninstallation)
+  - [1. وضع التلميحات التفاعلي (Interactive Hint Mode)](#1-وضع-التلميحات-التفاعلي-interactive-hint-mode)
+  - [2. التمرير التلقائي الانسيابي (Smooth Auto-Scroll)](#2-التمرير-التلقائي-الانسيابي-smooth-auto-scroll)
+  - [3. التمرير اليدوي (Manual Scroll)](#3-التمرير-اليدوي-manual-scroll)
+  - [4. التنقل بين أقسام التطبيق (App Sections Navigation)](#4-التنقل-بين-أقسام-التطبيق-app-sections-navigation)
+  - [5. إدارة التبويبات والتاريخ (Tabs & History)](#5-إدارة-التبويبات-والتاريخ-tabs--history)
+  - [6. البحث في النظام والتطبيقات (Search)](#6-البحث-في-النظام-والتطبيقات-search)
+  - [7. النسخ واللصق والتكبير (Clipboard & Zoom)](#7-النسخ-واللصق-والتكبير-clipboard--zoom)
+  - [8. الصوت والوسائط (Media & Volume)](#8-الصوت-والوسائط-media--volume)
+- [إدارة التطبيقات المستثناة (Excluded Apps & Profiles)](#-إدارة-التطبيقات-المستثناة-excluded-apps--profiles)
+- [إلغاء التثبيت الآمن (Uninstallation)](#-إلغاء-التثبيت-الآمن-uninstallation)
 - [الترخيص (License)](#-الترخيص-license)
 
 ---
 
-## ✨ المميزات الرئيسية (Key Features)
+## 🏗️ معمارية المشروع والمميزات الرئيسية (Architecture & Key Features)
 
-- 🟢 **نظام الوضعين (Modal Architecture)**: تفعيل وفصل فوري بين وضع الملاحة (**NORMAL MODE**) ووضع الكتابة العادي (**INSERT MODE**) بالضغط على **`Ctrl + Win`** أو زر **`Home`** مباشرة.
-- 🌊 **تمرير تلقائي انسيابي فائق النعومة (60 FPS Smooth Auto-Scroll)**: محرك بكسلي ميكروي (High-Resolution Sub-Delta) بتردد 60 إطار في الثانية لانزلاق هادئ وسلس كشاشات اللمس.
-- ⚡ **تحكم متدرج بالسرعة (10 مستويات)**: تدرج سرعات فائق التأني ومريح جداً للقراءة (`0.125 Delta` إلى `5.250 Delta`)، مع تحكم فوري بأزرار `+` و `-`.
-- 🛠️ **مثبت ذكي بنقرة واحدة (Smart Installer)**: يقوم بفحص وتثبيت AutoHotkey v2 تلقائياً، وإضافة السكريبت إلى قائمة بدء التشغيل مع ويندوز (`shell:startup`) وتشغيله فوراً.
-- 📊 **مؤشر مرئي ذكي (Dynamic ToolTip)**: شريط بياني عائم يوضح الوضع، والاتجاه، والسرعة اللحظية `[█████░░░░░] 5/10`.
-- 🛡️ **عزل متصفح Chrome تلقائياً**: تعطيل السكريبت تلقائياً داخل Google Chrome لتفادي التعارض مع إضافة Vimium الأصلية.
+```text
+VimWindows
+├── 🟢 Mode Engine           (NORMAL MODE ↔ INSERT MODE via Home or Ctrl+Win)
+├── 🎯 Hint Engine           (Real UI element discovery, Yellow overlay badges, Auto-Click)
+├── 🌊 Smooth Scroll Engine   (Target ~60 Hz micro-deltas with fractional accumulator)
+├── 📜 Vim Navigation        (j/k/h/l, gg/G, d/u, Tabs t/x/X/J/K/W, History H/L)
+├── 🛡️ Application Profiles   (Dynamic exclusion for Chrome, Edge, Brave, Firefox, Zen, Arc, etc.)
+└── 📦 Safe 1-Click Installer (Zero interference with other running AutoHotkey scripts)
+```
+
+- 🎯 **وضع التلميحات الحقيقي (Native Hint Mode)**: بالضغط على `f` أو `F`، يقوم السكريبت بقراءة عناصر واجهة النافذة النشطة وإظهار بطاقات تلميح صفراء فوق كل زر وقائمة ورابط؛ بمجرد كتابة الحرف يتم النقر على العنصر فوراً دون لمس الماوس.
+- 🟢 **نظام الوضعين (Modal Architecture)**: تفعيل وفصل فوري بين وضع الملاحة (**NORMAL MODE**) ووضع الكتابة العادي (**INSERT MODE**) بضغطة واحدة على زر **`Home`** أو **`Ctrl + Win`**.
+- 🌊 **تمرير تلقائي انسيابي (Target ~60 Hz Micro-Scrolling)**: محرك إزاحة بكسلية ميكروية بتردد مستهدف ~60 هرتز مع مجمع كسري (Fractional Accumulator) لتوفير حركة هادئة ومريحة للقراءة بالملليمتر.
+- ⚡ **تحكم متدرج بالسرعة (10 مستويات)**: يبدأ من سرعة متأنية جداً (`0.125 Delta`) مع سرعة افتراضية متزنة (مستوى 5)، وتحكم فوري بأزرار `+` و `-`.
+- 🛡️ **عزل ذكي للمتصفحات (Smart Browser Profiles)**: تعطيل تلقائي داخل متصفحات الويب التي تستخدم إضافة Vimium الأصلية لمنع أي تعارض في الاختصارات.
+- 🔒 **مثبت آمن بنقرة واحدة (Safe Installer)**: يفحص ويثبت AutoHotkey v2 تلقائياً دون إغلاق أو التأثير على أي سكريبتات AHK أخرى تعمل على جهازك.
 
 ---
 
-## 🚀 التثبيت السريع والذكي (1-Click Smart Installation)
+## 🚀 التثبيت السريع والذكي (1-Click Safe Installation)
 
-### 🔹 الخيار الأول (الأسهل عبر تحميل المستودع):
+### 🔹 التثبيت التلقائي بنقرة واحدة:
 1. قم بتحميل أو استنساخ المستودع:
    ```bash
    git clone https://github.com/Clshec/VimWindows.git
    ```
 2. اضغط نقراً مزدوجاً على **[`install.bat`](install.bat)**.
-3. سيقوم المثبت الذكي بالآتي:
-   - فحص وجود **AutoHotkey v2** وتثبيته تلقائياً إذا لم يكن مثبتاً.
-   - إضافة السكريبت لبدء التشغيل التلقائي مع إقلاع ويندوز.
-   - تشغيل السكريبت فوراً.
-
-### 🔹 الخيار الثاني (التشغيل اليدوي المباشر):
-- اضغط نقراً مزدوجاً على **[`Start_VimWindows.bat`](Start_VimWindows.bat)** أو **[`vim_windows.ahk`](vim_windows.ahk)**.
+3. يقوم المثبت الذكي بالآتي:
+   - فحص وتثبيت **AutoHotkey v2** تلقائياً عبر `winget` أو التحميل الرسمي المباشر إذا لم يكن مثبتاً.
+   - إضافة السكريبت إلى بدء التشغيل التلقائي مع ويندوز (`shell:startup`).
+   - تشغيل السكريبت بأمان تام دون إيقاف أي سكريبتات أخرى.
 
 ---
 
 ## ⌨️ جدول الاختصارات الكامل (Shortcuts Cheat Sheet)
 
 > [!NOTE]
-> جميع الاختصارات أدناه تعمل عند تفعيل **NORMAL MODE** (عبر الضغط على `Ctrl + Win` أو زر `Home`).  
+> جميع الاختصارات أدناه تعمل عند تفعيل **NORMAL MODE** (عبر الضغط على زر `Home` أو `Ctrl + Win`).  
 > للخروج إلى وضع الكتابة العادي، اضغط **`Esc`** أو **`i`** أو **`Home`**.
 
-### 1. التمرير التلقائي الانسيابي (Smooth Auto-Scroll)
+### 1. وضع التلميحات التفاعلي (Interactive Hint Mode)
+
+| الاختصار | الوظيفة | الوصف |
+| :--- | :--- | :--- |
+| **`f`** | 🎯 **إظهار تلميحات العناصر (Hint Mode)** | يظهر بطاقات تلميح صفراء فوق عناصر وأزرار النافذة؛ اكتب الحرف للنقر بزر الماوس الأيسر فوراً. |
+| **`F`** (`Shift + f`) | 🖱️ **نقر بزر الماوس الأيمن** | يظهر التلميحات وينقر بزر الماوس الأيمن (Context Menu / Open in New Window). |
+
+---
+
+### 2. التمرير التلقائي الانسيابي (Smooth Auto-Scroll)
 
 | الاختصار | التأثير | الوصف |
 | :--- | :--- | :--- |
-| **`v`** أو **`PgDn`** أو **`Ctrl + j`** أو **`Space`** | ⏬ **تمرير تلقائي لأسفل** | يبدأ الانزلاق البكسلي المستمر لأسفل (60 FPS). |
-| **`V`** أو **`PgUp`** أو **`Ctrl + k`** | ⏫ **تمرير تلقائي لأعلى** | يبدأ الانزلاق البكسلي المستمر لأعلى (60 FPS). |
+| **`v`** أو **`PgDn`** أو **`Ctrl + j`** أو **`Space`** | ⏬ **تمرير تلقائي لأسفل** | يبدأ الانزلاق المستمر لأسفل بتردد ~60 هرتز. |
+| **`V`** أو **`PgUp`** أو **`Ctrl + k`** | ⏫ **تمرير تلقائي لأعلى** | يبدأ الانزلاق المستمر لأعلى. |
 | **`=`** أو **`+`** أو **`Numpad +`** | ⚡ **تسريع التمرير** | رفع سرعة الانزلاق بمقدار درجة واحدة (من 1 إلى 10). |
 | **`-`** أو **`Numpad -`** | 🐌 **تبطئة التمرير** | خفض سرعة الانزلاق بمقدار درجة واحدة. |
 | **`Space`** أو **`Esc`** أو **`i`** أو أي زر تنقل | ⏹️ **إيقاف التمرير** | إيقاف التمرير التلقائي فوراً في أي لحظة. |
 
 ---
 
-### 2. التمرير اليدوي (Manual Scroll)
+### 3. التمرير اليدوي (Manual Scroll)
 
 | الاختصار | الوظيفة | الوصف |
 | :--- | :--- | :--- |
@@ -93,7 +112,7 @@
 
 ---
 
-### 3. التنقل بين أقسام التطبيق (App Sections Navigation)
+### 4. التنقل بين أقسام التطبيق (App Sections Navigation)
 
 | الاختصار | الوظيفة | الوصف |
 | :--- | :--- | :--- |
@@ -102,7 +121,7 @@
 
 ---
 
-### 4. إدارة التبويبات والتاريخ (Tabs & History)
+### 5. إدارة التبويبات والتاريخ (Tabs & History)
 
 | الاختصار | الوظيفة | الوصف |
 | :--- | :--- | :--- |
@@ -118,22 +137,20 @@
 
 ---
 
-### 5. البحث والتفاعل في الشاشة (Screen Navigation & Search)
+### 6. البحث في النظام والتطبيقات (Search)
 
 | الاختصار | الوظيفة | الوصف |
 | :--- | :--- | :--- |
-| **`/`** | 🔍 بحث في الصفحة | فتح شريط البحث المعتاد (`Ctrl + f`) مع الخروج التلقائي لوضع الكتابة. |
+| **`s`** | ⚡ **بحث ويندوز الشامل** | فتح شريط بحث ويندوز الأساسي (`Win + S`). |
+| **`S`** (`Shift + s`) | 🔍 **بحث داخل التطبيق** | فتح شريط البحث المدمج في التطبيق النشط (`Ctrl + F`). |
+| **`/`** | 🔎 **بحث مع إدخال نص** | الخروج لوضع الكتابة وفتح شريط البحث (`Ctrl + F`). |
 | **`n`** | ⏭️ النتيجة التالية | الانتقال لنتيجة البحث التالية (`F3`). |
 | **`N`** (`Shift + n`) | ⏮️ النتيجة السابقة | الانتقال لنتيجة البحث السابقة (`Shift + F3`). |
-| **`f`** | 🎯 تفاعل الشاشة | تفعيل الملاحة والتفاعل على عناصر الشاشة (`Ctrl + m`). |
-| **`F`** (`Shift + f`) | 🖥️ تفاعل كامل مع الشاشة | تفاعل كامل مع عناصر الشاشة النشطة (`Ctrl + Shift + m`). |
-| **`s`** | ⚡ البحث العام | فتح شريط البحث العام (`Ctrl + Alt`). |
-| **`S`** (`Shift + s`) | 🪟 بحث داخل النافذة | بحث مخصص داخل عناصر النافذة النشطة فقط. |
 | **`o`** | 🌐 شريط العنوان (Vomnibar) | التركيز على شريط العنوان والروابط (`Ctrl + l`). |
 
 ---
 
-### 6. النسخ واللصق والتكبير (Clipboard & Zoom)
+### 7. النسخ واللصق والتكبير (Clipboard & Zoom)
 
 | الاختصار | الوظيفة | الوصف |
 | :--- | :--- | :--- |
@@ -143,7 +160,7 @@
 
 ---
 
-### 7. الصوت والوسائط (Media & Volume)
+### 8. الصوت والوسائط (Media & Volume)
 
 | الاختصار | الوظيفة |
 | :--- | :--- |
@@ -157,9 +174,15 @@
 
 ---
 
-## 🛑 إلغاء التثبيت (Uninstallation)
+## 🛡️ إدارة التطبيقات المستثناة (Excluded Apps & Profiles)
 
-لإيقاف السكريبت وحذفه من بدء التشغيل التلقائي، اضغط نقراً مزدوجاً على **[`uninstall.bat`](uninstall.bat)**.
+السكريبت يحتوي على مصفوفة `ExcludedBrowsers` تتضمن المتصفحات الشائعة التي تحتوي على إضافات Vim (مثل Chrome, Edge, Brave, Firefox, Zen, Arc, Opera, Vivaldi). يمكنك إضافة أي برنامج تريد تعطيل السكريبت داخله بسهولة بتعديل المصفوفة داخل ملف [`vim_windows.ahk`](vim_windows.ahk).
+
+---
+
+## 🛑 إلغاء التثبيت الآمن (Uninstallation)
+
+لإيقاف السكريبت وإزالته من بدء التشغيل التلقائي بأمان دون التأثير على أي سكريبتات أخرى، اضغط نقراً مزدوجاً على **[`uninstall.bat`](uninstall.bat)**.
 
 ---
 

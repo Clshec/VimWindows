@@ -1,6 +1,7 @@
 ﻿<#
 .SYNOPSIS
-    Uninstaller for VimWindows
+    Safe Uninstaller for VimWindows
+    Stops only VimWindows processes and removes startup shortcut.
 #>
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -9,8 +10,17 @@ $ShortcutPath = Join-Path $StartupFolder "VimWindows.lnk"
 
 Write-Host "🛑 جارٍ إيقاف سكريبت VimWindows وإزالته من بدء التشغيل..." -ForegroundColor Yellow
 
-# Stop running process
-Stop-Process -Name "AutoHotkey64", "AutoHotkey32" -Force -ErrorAction SilentlyContinue
+# Stop ONLY VimWindows instances safely without affecting other AHK scripts
+$stopped = $false
+Get-CimInstance Win32_Process -Filter "Name like 'AutoHotkey%'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*vim_windows.ahk*" } | ForEach-Object { 
+    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue 
+    Write-Host "   ✅ تم إيقاف عملية VimWindows (PID: $($_.ProcessId))." -ForegroundColor Green
+    $stopped = $true
+}
+
+if (-not $stopped) {
+    Write-Host "   ℹ️ لم تكن هناك عملية نشطة لـ VimWindows." -ForegroundColor Cyan
+}
 
 # Remove startup shortcut
 if (Test-Path $ShortcutPath) {

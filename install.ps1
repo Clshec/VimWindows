@@ -1,7 +1,7 @@
 ﻿<#
 .SYNOPSIS
     Smart Installer for VimWindows
-    Automatically detects/installs AutoHotkey v2, creates startup shortcuts, and launches the script.
+    Safely detects/installs AutoHotkey v2, creates startup shortcuts, and launches the script without touching other AHK scripts.
 #>
 
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -49,7 +49,6 @@ if ($AhkExe) {
 } else {
     Write-Host "   ⚠️ AutoHotkey v2 غير مثبت. جارٍ التثبيت التلقائي..." -ForegroundColor Yellow
     
-    # Try winget first
     $hasWinget = Get-Command "winget" -ErrorAction SilentlyContinue
     $installed = $false
 
@@ -113,17 +112,19 @@ try {
     Write-Host "   ⚠️ تعذر إنشاء اختصار بدء التشغيل: $_" -ForegroundColor DarkYellow
 }
 
-# 3. Launch Script Immediately
-Write-Host "[3/3] 🚀 تشغيل السكريبت فوراً..." -ForegroundColor Yellow
-Stop-Process -Name "AutoHotkey64", "AutoHotkey32" -Force -ErrorAction SilentlyContinue
-Start-Sleep -Milliseconds 500
+# 3. Launch Script Safely (Without killing unrelated AHK scripts)
+Write-Host "[3/3] 🚀 تشغيل السكريبت بأمان..." -ForegroundColor Yellow
+Get-CimInstance Win32_Process -Filter "Name like 'AutoHotkey%'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -like "*vim_windows.ahk*" } | ForEach-Object { 
+    Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue 
+}
+Start-Sleep -Milliseconds 300
 
 Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = "`"$AhkExe`" `"$AhkScript`"" } | Out-Null
 
 Write-Host ""
 Write-Host "=========================================================" -ForegroundColor Green
 Write-Host "  🎉 تم التثبيت والتشغيل بنجاح!                          " -ForegroundColor White
-Write-Host "  👉 اضغط Ctrl + Win في أي وقت لتفعيل NORMAL MODE        " -ForegroundColor Yellow
+Write-Host "  👉 اضغط Home أو Ctrl + Win في أي وقت لتفعيل NORMAL MODE " -ForegroundColor Yellow
 Write-Host "=========================================================" -ForegroundColor Green
 Write-Host ""
 Start-Sleep -Seconds 3
