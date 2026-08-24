@@ -1,4 +1,4 @@
-﻿# 🟢 VimWindows
+# 🟢 VimWindows
 
 <p align="center">
   <b>تجربة اختصارات Vimium و Fluent Search الكاملة على مستوى نظام ويندوز مع تمرير تلقائي انسيابي فائق النعومة (60 FPS)</b>
@@ -59,7 +59,7 @@
 1. تأكد من تثبيت **[AutoHotkey v2](https://www.autohotkey.com/)** على جهازك.
 2. قم بتحميل أو استنساخ هذا المستودع:
    ```bash
-   git clone https://github.com/YourUsername/VimWindows.git
+   git clone https://github.com/Clshec/VimWindows.git
    ```
 3. شغّل السكريبت بإحدى الطرق التالية:
    - **طريقة النقرة الواحدة**: اضغط نقراً مزدوجاً على الملف المشغل [`Start_VimWindows.bat`](Start_VimWindows.bat).
