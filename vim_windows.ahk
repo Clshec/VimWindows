@@ -4,7 +4,8 @@ Persistent(true)
 InstallKeybdHook()
 
 ; =============================================================================
-;  VimWindows - Vimium & Mouse Control for Windows
+;  VimWindows - System-wide Vimium & Mouse Control Architecture
+;  Orchestrator: AutoHotkey v2 | Mouse Backend: Mousemaster
 ;  Ctrl+Win or Home = NORMAL MODE | i / Esc = INSERT MODE
 ; =============================================================================
 
@@ -16,7 +17,7 @@ global ScrollSpeed     := 5     ; السرعة من 1 إلى 10 (الافترا�
 global ScrollAccum     := 0.0   ; مجمع الإزاحة الكسرية للسرعات البطيئة جداً
 global IsDragging      := false
 
-; محرك تحريك الماوس المتسارع (MouseMaster Continuous Movement)
+; محرك تحريك الماوس المتسارع الاحتياطي (Native Fallback Mouse Engine)
 global MoveX           := 0
 global MoveY           := 0
 global CurrentMouseSpeed := 4.0
@@ -49,6 +50,33 @@ IsExcludedApp() {
     return false
 }
 
+; =============================================================================
+;  إدارة وتشغيل محرك الماوس المساعد (Mousemaster Backend)
+; =============================================================================
+
+EnsureMousemasterRunning() {
+    mmExe := A_ScriptDir . "\mousemaster\mousemaster.exe"
+    mmDir := A_ScriptDir . "\mousemaster"
+    if FileExist(mmExe) {
+        if (!ProcessExist("mousemaster.exe")) {
+            try Run('"' . mmExe . '"', mmDir, "Hide")
+        }
+    }
+}
+
+EnsureMousemasterRunning()
+
+ActivateMousemaster() {
+    StopAutoScroll()
+    ClearHints()
+    ClearGrid()
+    EnsureMousemasterRunning()
+    ; إرسال نبضة F13 لتبديل وضع Mousemaster إلى وضع الماوس
+    DllCall("keybd_event", "UChar", 0x7C, "UChar", 0, "UInt", 0, "UPtr", 0)
+    DllCall("keybd_event", "UChar", 0x7C, "UChar", 0, "UInt", 2, "UPtr", 0)
+    ToolTip("🖱️ MOUSE MODE | [Esc / q] رجوع | [Space] نقر | [h/j/k/l] تحريك | [d] سحب | [g] شبكة", 15, 10)
+}
+
 ToggleVimMode() {
     global VimMode, IsDragging
     VimMode := !VimMode
@@ -72,7 +100,7 @@ Home:: ToggleVimMode()
 ShowMode() {
     global VimMode, AutoScrollState, ScrollSpeed
     if (VimMode) {
-        ToolTip("🟢 NORMAL MODE | [Home/Esc] خروج | [f] تلميحات | [g] شبكة | [الأسهم] ماوس | [PgDn/v] سكرول", 15, 10)
+        ToolTip("🟢 NORMAL MODE | [Home/Esc] خروج | [m] ماوس | [f] تلميحات | [g] شبكة | [PgDn/v] سكرول", 15, 10)
     } else {
         ToolTip("⚫ INSERT MODE", 15, 10)
         SetTimer(() => ToolTip(), -1200)
@@ -184,7 +212,7 @@ ShowScrollStatus() {
 }
 
 ; =============================================================================
-;  محرك التحكم بالماوس المتسارع (MouseMaster Acceleration Engine)
+;  محرك الماوس الاحتياطي المباشر (Fallback Direct Mouse)
 ; =============================================================================
 
 StartMouseMove(dx, dy) {
@@ -218,7 +246,6 @@ DoMouseMove() {
         return
     }
     
-    ; MOUSEEVENTF_MOVE = 0x0001
     stepX := Integer(MoveX * CurrentMouseSpeed)
     stepY := Integer(MoveY * CurrentMouseSpeed)
     DllCall("mouse_event", "UInt", 0x0001, "Int", stepX, "Int", stepY, "UInt", 0, "UPtr", 0)
@@ -232,7 +259,7 @@ ToggleMouseDrag() {
     IsDragging := !IsDragging
     if (IsDragging) {
         Click("Down")
-        ToolTip("✊ جاري السحب (DRAG MODE) - اضغط v أو Space للإفلات", 15, 35)
+        ToolTip("✊ جاري السحب (DRAG MODE) - اضغط v للإفلات", 15, 35)
     } else {
         Click("Up")
         ToolTip()
@@ -241,7 +268,7 @@ ToggleMouseDrag() {
 }
 
 ; =============================================================================
-;  محرك شبكة القفز السريع للماوس (3x3 Grid Navigation Engine)
+;  محرك شبكة القفز السريع 3x3 (Grid Jump Engine)
 ; =============================================================================
 
 global GridGuis := []
@@ -290,7 +317,7 @@ StartGridMode() {
             gridCenters[num] := {x: cX, y: cY}
             
             gBox := Gui("+AlwaysOnTop -Caption +ToolWindow +Border +E0x20", "VimGrid")
-            gBox.BackColor := "1E88E5"  ; أزرق شبكة الماوس
+            gBox.BackColor := "1E88E5"
             gBox.SetFont("s14 bold cWhite", "Arial")
             gBox.Add("Text", "Center w30 h30", num)
             
@@ -495,7 +522,10 @@ i:: {
     exitVim()
 }
 
-; ----- تحريك الماوس المتسارع (Mouse Movement via Arrows) -----
+; ----- محرك الماوس المتقدم (Mousemaster Backend) -----
+m:: ActivateMousemaster()               ; m = تفعيل وضع الماوس المتطور (Mousemaster)
+
+; ----- تحريك الماوس بالأسهم (Direct Arrow Movement) -----
 Up::    StartMouseMove(0, -1)
 Down::  StartMouseMove(0, 1)
 Left::  StartMouseMove(-1, 0)
@@ -506,13 +536,10 @@ Down Up::  StopMouseMove(0, 1)
 Left Up::  StopMouseMove(-1, 0)
 Right Up:: StopMouseMove(1, 0)
 
-; ----- النقر وسحب الماوس (Mouse Clicks & Drag) -----
+; ----- النقر وسحب الماوس المباشر -----
 Enter::  Click()                       ; Enter = نقر أيسر
 +Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
 ^Enter:: Click("Middle")               ; Ctrl+Enter = نقر أوسط
-m::      Click()                       ; m = نقر أيسر
-+m::     Click("Right")                ; M = نقر أيمن
-v::      ToggleMouseDrag()             ; v = تشغيل/إيقاف وضع السحب (Drag Mode)
 
 ; ----- شبكة القفز السريع وقمة الصفحة (Grid & Top Page) -----
 g:: {
@@ -668,16 +695,15 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
 ; ----- مساعدة -----
 +/:: {
     help := "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
-          . "🟢 VimWindows - الاختصارات المتكاملة`n"
+          . "🟢 VimWindows - الاختصارات الموحدة`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "Ctrl+Win أو Home → تفعيل/إيقاف NORMAL MODE`n"
           . "i / Esc  → INSERT MODE`n`n"
-          . "🖱️ التحكم بالماوس (Mouse Control):`n"
-          . "  الأسهم  → تحريك الماوس بسلاسة وتسارع`n"
-          . "  Enter/m → نقر أيسر (Left Click)`n"
-          . "  Shift+Enter/M → نقر أيمن (Right Click)`n"
-          . "  Ctrl+Enter    → نقر أوسط (Middle Click)`n"
-          . "  v       → وضع السحب والإفلات (Drag Mode)`n`n"
+          . "🖱️ محرك الماوس المتقدم (Mouse Backend):`n"
+          . "  m       → تفعيل وضع الماوس المستمر (Mousemaster)`n"
+          . "            (تحريك بـ HJKL/الأسهم، نقر بـ Space، سحب بـ d)`n"
+          . "  الأسهم  → تحريك الماوس المباشر`n"
+          . "  Enter   → نقر أيسر (Left Click)`n`n"
           . "🔢 شبكة القفز السريع (Grid Jump):`n"
           . "  g       → إظهار شبكة 3x3 والقفز بالأرقام (1-9)`n"
           . "  gg      → انتقال لبداية الصفحة (Top)`n`n"

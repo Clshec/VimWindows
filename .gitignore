@@ -1,4 +1,4 @@
-﻿# Windows
+# Windows
 Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
@@ -7,3 +7,8 @@ $RECYCLE.BIN/
 *.tmp
 *.log
 *.bak
+
+# Binaries (downloaded automatically via install.ps1)
+mousemaster/*.exe
+*.exe
+

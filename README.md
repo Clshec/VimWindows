@@ -1,13 +1,14 @@
 ﻿# 🟢 VimWindows
 
 <p align="center">
-  <b>تجربة اختصارات وملاحة Vimium المتكاملة مع محرك التحكم بالفأرة من لوحة المفاتيح (Mouse Control & 3x3 Grid) على مستوى نظام ويندوز</b>
+  <b>منظومة ملاحة واختصارات Vimium المتكاملة مع محرك Mousemaster للتحكم بالماوس على مستوى نظام ويندوز</b>
   <br>
-  <i>Vimium navigation, accelerated mouse control, 3x3 grid jump, UI Hint Mode & smooth scrolling for Windows</i>
+  <i>System-wide Vimium navigation, native UI Hint Mode, smooth micro-scrolling & Mousemaster mouse backend for Windows</i>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/AutoHotkey-v2.0+-green.svg" alt="AutoHotkey v2">
+  <img src="https://img.shields.io/badge/Backend-Mousemaster-blue.svg" alt="Mousemaster Backend">
   <img src="https://img.shields.io/badge/Platform-Windows-blue.svg" alt="Windows">
   <img src="https://img.shields.io/badge/Architecture-Modular-purple.svg" alt="Modular">
   <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="MIT License">
@@ -17,94 +18,104 @@
 ---
 
 ## 📖 جدول المحتويات (Table of Contents)
-- [معمارية المشروع والمميزات الرئيسية (Architecture & Key Features)](#-معمارية-المشروع-والمميزات-الرئيسية-architecture--key-features)
-- [التثبيت السريع والذكي (1-Click Safe Installation)](#-التثبيت-السريع-والذكي-1-click-safe-installation)
-- [جدول الاختصارات الكامل (Shortcuts Cheat Sheet)](#-جدول-الاختصارات-الكامل-shortcuts-cheat-sheet)
-  - [1. التحكم الكامل بالماوس والسحب (Mouse Control & Drag)](#1-التحكم-الكامل-بالماوس-والسحب-mouse-control--drag)
-  - [2. شبكة القفز السريع للماوس (3x3 Grid Jump Mode)](#2-شبكة-القفز-السريع-للماوس-3x3-grid-jump-mode)
-  - [3. وضع التلميحات التفاعلي (Interactive Hint Mode)](#3-وضع-التلميحات-التفاعلي-interactive-hint-mode)
+- [المعمارية الموحدة للمشروع (Unified Architecture)](#-المعمارية-الموحدة-للمشروع-unified-architecture)
+- [التثبيت الذكي الموحد (1-Click Unified Installation)](#-التثبيت-الذكي-الموحد-1-click-unified-installation)
+- [جدول الاختصارات الشامل (Complete Shortcuts Cheat Sheet)](#-جدول-الاختصارات-الشامل-complete-shortcuts-cheat-sheet)
+  - [1. محرك الماوس المتقدم (Mousemaster Backend - `m`)](#1-محرك-الماوس-المتقدم-mousemaster-backend---m)
+  - [2. وضع التلميحات التفاعلي (Interactive Hint Mode - `f`)](#2-وضع-التلميحات-التفاعلي-interactive-hint-mode---f)
+  - [3. شبكة القفز السريع 3x3 (Grid Jump - `g`)](#3-شبكة-القفز-السريع-3x3-grid-jump---g)
   - [4. التمرير التلقائي الانسيابي (Smooth Auto-Scroll)](#4-التمرير-التلقائي-الانسيابي-smooth-auto-scroll)
-  - [5. التمرير اليدوي (Manual Scroll)](#5-التمرير-اليدوي-manual-scroll)
+  - [5. التمرير اليدوي بنمط Vimium (Manual Scroll)](#5-التمرير-اليدوي-بنمط-vimium-manual-scroll)
   - [6. إدارة التبويبات والتاريخ (Tabs & History)](#6-إدارة-التبويبات-والتاريخ-tabs--history)
   - [7. البحث في النظام والتطبيقات (Search)](#7-البحث-في-النظام-والتطبيقات-search)
-  - [8. النسخ واللصق والتكبير والصوت (System & Media)](#8-النسخ-واللصق-والتكبير-والصوت-system--media)
-- [إدارة التطبيقات المستثناة (Excluded Apps & Profiles)](#-إدارة-التطبيقات-المستثناة-excluded-apps--profiles)
+  - [8. الميديا والنظام والصوت (System & Media)](#8-الميديا-والنظام-والصوت-system--media)
+- [التطبيقات المستثناة تلقائياً (Excluded Browsers)](#-التطبيقات-المستثناة-تلقائياً-excluded-browsers)
 - [إلغاء التثبيت الآمن (Uninstallation)](#-إلغاء-التثبيت-الآمن-uninstallation)
 - [الترخيص (License)](#-الترخيص-license)
 
 ---
 
-## 🏗️ معمارية المشروع والمميزات الرئيسية (Architecture & Key Features)
+## 🏗️ المعمارية الموحدة للمشروع (Unified Architecture)
+
+يعتمد مشروع **VimWindows** على تصميم معياري ناضج (Modular Orchestrator / Backend Architecture):
 
 ```text
-VimWindows
-├── 🟢 Persistent Mode Engine  (Always-visible status bar in NORMAL MODE)
-├── 🖱️ Accelerated Mouse Engine (Smooth mouse movement with acceleration via Arrow keys)
-├── 🔢 3x3 Grid Jump Engine     (Jump cursor instantly across 9 screen quadrants)
-├── 🎯 Hint Overlay Engine      (Real UI element discovery, Yellow overlay badges, Auto-Click)
-├── 🌊 Smooth Scroll Engine     (Target ~60 Hz micro-deltas with fractional accumulator)
-├── 📜 Vim Navigation           (j/k/h/l, gg/G, d/u, Tabs t/x/X/J/K/W, History H/L)
-├── 🛡️ Application Profiles      (Dynamic exclusion for Chrome, Edge, Brave, Firefox, Zen, Arc, etc.)
-└── 📦 Safe 1-Click Installer   (Zero interference with other running AutoHotkey scripts)
+VimWindows (المظلة والمنظومة الموحدة)
+│
+├── 🟢 VimWindows Orchestrator (AutoHotkey v2)
+│   ├── Mode Engine (NORMAL MODE ↔ INSERT MODE via Home / Ctrl+Win)
+│   ├── Persistent Status Overlay (شريط الحالة الدائم في أعلى الشاشة)
+│   ├── UI Hint Mode Engine (توليد بطاقات التلميح الصفراء والنقر المباشر)
+│   ├── Target ~60 Hz Smooth Micro-Scroll (المجمع الكسري والتمرير الانسيابي)
+│   ├── Vim Navigation (j/k/h/l, gg/G, Tabs t/x/X/J/K/W, History H/L)
+│   └── Multi-Browser Profiles (عزل متصفحات الويب لمنع التضارب)
+│
+└── 🖱️ Mousemaster Backend (مدمج كخدمة ماوس متخصصة)
+    ├── Continuous Accelerated Mouse Movement (تحريك الماوس بمنحنيات تسارع دقيقة)
+    ├── Precision / Turbo Speeds (Shift للبطء الدقيق، Ctrl للسرعة الفائقة)
+    ├── Mouse Actions (Left / Right / Middle click)
+    └── Drag & Drop Mode (تثبيت السحب والإفلات)
 ```
 
-- 🟢 **مؤشر وضع دائم (Persistent Mode Indicator)**: يظل شريط الحالة الأخضر `🟢 NORMAL MODE` ظاهراً في أعلى الشاشة طوال فترة تفعيل وضع الملاحة، ويختفي تلقائياً عند الرجوع لوضع الكتابة.
-- 🖱️ **محرك تحكم متسارع بالماوس (Accelerated Mouse Movement)**: تحريك مؤشر الفأرة بالأسهم بنعومة فائقة مع تسارع ديناميكي يبدأ بحركة دقيقة بالبكسل ثم يتسارع بسلاسة للتنقل عبر الشاشات الكبيرة.
-- 🔢 **شبكة القفز السريع 3x3 (Grid Navigation)**: اضغط `g` لتقسيم الشاشة إلى 9 مناطق تفاعلية مع أرقام، واضغط من `1` إلى `9` للقفز الفوري للمنطقة المطلوبة.
-- 🎯 **وضع التلميحات الحقيقي (Native Hint Mode)**: بالضغط على `f` أو `F`، يقرأ السكريبت عناصر وأزرار النافذة النشطة ويظهر تلميحات صفراء للنقر المباشر دون لمس الفأرة.
-- 🌊 **تمرير تلقائي انسيابي (Target ~60 Hz Micro-Scrolling)**: انزلاق مستمر هادئ جداً ومريح للقراءة مع سرعة افتراضية متزنة وتحكم لحظي بالسرعة عبر `+` و `-`.
-- 🔒 **مثبت آمن بنقرة واحدة (Safe Installer)**: يفحص ويثبت AutoHotkey v2 تلقائياً دون إغلاق أو التأثير على أي سكريبتات AHK أخرى.
+- **تجربة استخدام واحدة وموحدة**: المستخدم يتعامل مع أداة واحدة تسمى **VimWindows** بنقرة واحدة عبر `install.bat`.
+- **جسر تواصل داخلي سلس**: ضغط زر `m` داخل `NORMAL MODE` يُفعّل محرك الماوس المتخصص فوراً، والضغط على `Esc` أو `q` يعيدك فوراً إلى وضع الملاحة الطبيعي.
 
 ---
 
-## 🚀 التثبيت السريع والذكي (1-Click Safe Installation)
+## 🚀 التثبيت الذكي الموحد (1-Click Unified Installation)
 
 1. قم بتحميل أو استنساخ المستودع:
    ```bash
    git clone https://github.com/Clshec/VimWindows.git
    ```
 2. اضغط نقراً مزدوجاً على **[`install.bat`](install.bat)**.
-3. يقوم المثبت الذكي بالآتي:
-   - فحص وتثبيت **AutoHotkey v2** تلقائياً في الخلفية.
-   - إضافة السكريبت إلى بدء التشغيل التلقائي مع ويندوز (`shell:startup`).
-   - تشغيل السكريبت فوراً بأمان.
+3. يقوم المثبت الذكي بالآتي تلقائياً:
+   - فحص وتثبيت **AutoHotkey v2** (عبر `winget` أو التحميل المباشر).
+   - تحميل محرك **Mousemaster** المخصص تلقائياً من GitHub ووضعه في مجلد `mousemaster/`.
+   - ضبط الإعدادات وإضافة المنظومة لبدء التشغيل مع ويندوز (`shell:startup`).
+   - تشغيل المنظومة كاملة في الخلفية دون أي تعارض مع أي سكريبتات أخرى.
 
 ---
 
-## ⌨️ جدول الاختصارات الكامل (Shortcuts Cheat Sheet)
+## ⌨️ جدول الاختصارات الشامل (Complete Shortcuts Cheat Sheet)
 
 > [!NOTE]
 > جميع الاختصارات أدناه تعمل عند تفعيل **NORMAL MODE** (عبر الضغط على زر `Home` أو `Ctrl + Win`).  
 > للخروج إلى وضع الكتابة العادي، اضغط **`Esc`** أو **`i`** أو **`Home`**.
 
-### 1. التحكم الكامل بالماوس والسحب (Mouse Control & Drag)
+### 1. محرك الماوس المتقدم (Mousemaster Backend - `m`)
 
-| الاختصار | الوظيفة | الوصف |
+عند الضغط على **`m`** في `NORMAL MODE`، يتم تفعيل وضع الماوس المستمر:
+
+| الاختصار داخل وضع الماوس | الوظيفة | الوصف |
 | :--- | :--- | :--- |
-| **`↑ ↓ ← →` (الأسهم)** | 🖱️ **تحريك الماوس** | تحريك مؤشر الفأرة بنعومة فائقة مع تسارع ذكي عند الاستمرار بالضغط. |
-| **`Enter`** أو **`m`** | 👈 **نقر بزر الماوس الأيسر** | Left Click مباشر في مكان المؤشر الحالي. |
-| **`Shift + Enter`** أو **`M`** | 👉 **نقر بزر الماوس الأيمن** | Right Click لفتح القائمة السياقية (Context Menu). |
-| **`Ctrl + Enter`** | 🔘 **نقر بزر الماوس الأوسط** | Middle Click لفتح الروابط في تبويب جديد أو التمرير. |
-| **`v`** | ✊ **وضع السحب والإفلات (Drag)** | تثبيت زر الفأرة الأيسر مضغوطاً لتحديد النصوص وسحب النوافذ، ثم اضغط `v` مرة أخرى للإفلات. |
+| **`h` / `j` / `k` / `l`** أو **الأسهم** | 🖱️ **تحريك الماوس** | تحريك مؤشر الفأرة بنعومة تامة وتسارع ديناميكي متقدم. |
+| **`Space`** أو **`Enter`** | 👈 **نقر أيسر** | Left Click مباشر في مكان المؤشر الحالي. |
+| **`Shift + Space`** أو **`r`** | 👉 **نقر أيمن** | Right Click لفتح القائمة السياقية (Context Menu). |
+| **`Ctrl + Space`** أو **`,`** | 🔘 **نقر أوسط** | Middle Click لفتح الروابط في تبويب جديد. |
+| **`Shift` (أثناء الحركة)** | 🐌 **وضع الدقة البطيء** | إبطاء الحركة للتحكم الدقيق بالبكسل الواحد. |
+| **`Ctrl` (أثناء الحركة)** | ⚡ **وضع التوربو السريع** | تسريع حركة الماوس للقفز بين الشاشات المتعددة بسرعة فائقة. |
+| **`d`** أو **`v`** | ✊ **وضع السحب والإفلات (Drag)** | تثبيت زر الفأرة مضغوطاً لتحديد النصوص وسحب النوافذ. |
+| **`Esc`** أو **`q`** | ↩️ **خروج من وضع الماوس** | العودة الفورية إلى `NORMAL MODE`. |
 
 ---
 
-### 2. شبكة القفز السريع للماوس (3x3 Grid Jump Mode)
+### 2. وضع التلميحات التفاعلي (Interactive Hint Mode - `f`)
+
+| الاختصار | الوظيفة | الوصف |
+| :--- | :--- | :--- |
+| **`f`** | 🎯 **إظهار تلميحات العناصر (Hint Mode)** | يظهر بطاقات تلميح صفراء فوق عناصر وأزرار النافذة؛ اكتب الحرف للنقر بزر الماوس الأيسر فوراً. |
+| **`F`** (`Shift + f`) | 🖱️ **نقر بزر الماوس الأيمن** | يظهر التلميحات وينقر بزر الماوس الأيمن على العنصر المحدد. |
+
+---
+
+### 3. شبكة القفز السريع 3x3 (Grid Jump - `g`)
 
 | الاختصار | الوظيفة | الوصف |
 | :--- | :--- | :--- |
 | **`g`** | 🔢 **إظهار شبكة القفز 3x3** | تظهر شبكة مرقمة من 1 إلى 9 على الشاشة؛ اضغط الرقم للقفز الفوري للمنطقة. |
 | **`gg`** | 🔝 **أعلى الصفحة** | ضغط `g` مرتين متتاليتين ينقلك لبداية الصفحة أو المستند (`Ctrl + Home`). |
 | **`G`** (`Shift + g`) | 🔚 **أسفل الصفحة** | انتقال فوري لنهاية المستند أو الصفحة (`Ctrl + End`). |
-
----
-
-### 3. وضع التلميحات التفاعلي (Interactive Hint Mode)
-
-| الاختصار | الوظيفة | الوصف |
-| :--- | :--- | :--- |
-| **`f`** | 🎯 **إظهار تلميحات العناصر (Hint Mode)** | يظهر بطاقات تلميح صفراء فوق عناصر وأزرار النافذة؛ اكتب الحرف للنقر بزر الماوس الأيسر فوراً. |
-| **`F`** (`Shift + f`) | 🖱️ **نقر بزر الماوس الأيمن** | يظهر التلميحات وينقر بزر الماوس الأيمن على العنصر المحدد. |
 
 ---
 
@@ -120,7 +131,7 @@ VimWindows
 
 ---
 
-### 5. التمرير اليدوي (Manual Scroll)
+### 5. التمرير اليدوي بنمط Vimium (Manual Scroll)
 
 | الاختصار | الوظيفة | الوصف |
 | :--- | :--- | :--- |
@@ -162,7 +173,7 @@ VimWindows
 
 ---
 
-### 8. النسخ واللصق والتكبير والصوت (System & Media)
+### 8. الميديا والنظام والصوت (System & Media)
 
 | الاختصار | الوظيفة |
 | :--- | :--- |
@@ -175,18 +186,18 @@ VimWindows
 
 ---
 
-## 🛡️ إدارة التطبيقات المستثناة (Excluded Apps & Profiles)
+## 🛡️ التطبيقات المستثناة تلقائياً (Excluded Browsers)
 
-السكريبت يحتوي على مصفوفة `ExcludedBrowsers` تتضمن المتصفحات الشائعة التي تحتوي على إضافات Vim (مثل Chrome, Edge, Brave, Firefox, Zen, Arc, Opera, Vivaldi). يمكنك إضافة أي برنامج تريد تعطيل السكريبت داخله بسهولة بتعديل المصفوفة داخل ملف [`vim_windows.ahk`](vim_windows.ahk).
+السكريبت يعزل المتصفحات الشائعة التي تستخدم إضافات Vim (مثل Chrome, Edge, Brave, Firefox, Zen, Arc, Opera, Vivaldi) تلقائياً لمنع أي تعارض. يمكنك تخصيص مصفوفة `ExcludedBrowsers` داخل [`vim_windows.ahk`](vim_windows.ahk).
 
 ---
 
 ## 🛑 إلغاء التثبيت الآمن (Uninstallation)
 
-لإيقاف السكريبت وإزالته من بدء التشغيل التلقائي بأمان دون التأثير على أي سكريبتات أخرى، اضغط نقراً مزدوجاً على **[`uninstall.bat`](uninstall.bat)**.
+لإيقاف جميع خدمات المنظومة وإزالتها من بدء التشغيل التلقائي بنقرة واحدة، اضغط نقراً مزدوجاً على **[`uninstall.bat`](uninstall.bat)**.
 
 ---
 
 ## 📄 الترخيص (License)
 
-هذا المشروع مرخص تحت رخصة **[MIT License](LICENSE)**. يمكنك استخدامه، وتعديله، ومشاركته بحرية.
+هذا المشروع مرخص تحت رخصة **[MIT License](LICENSE)**.
