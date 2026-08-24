@@ -15,14 +15,17 @@ global AutoScrollState := 0     ; 0 = متوقف, 1 = لأسفل, -1 = لأعل�
 global ScrollSpeed     := 5     ; السرعة من 1 إلى 10 (الافتراضي 5)
 global ScrollAccum     := 0.0   ; مجمع الإزاحة الكسرية للسرعات البطيئة جداً
 
-^LWin::
-^RWin:: {
+ToggleVimMode() {
     global VimMode
     VimMode := !VimMode
     if (!VimMode)
         StopAutoScroll()
     ShowMode()
 }
+
+^LWin::
+^RWin::
+Home:: ToggleVimMode()
 
 ShowMode() {
     global VimMode
@@ -304,7 +307,7 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
     help := "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "🟢 VimWindows - الاختصارات`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
-          . "Ctrl+Win → تفعيل/إيقاف NORMAL MODE`n"
+          . "Ctrl+Win أو Home → تفعيل/إيقاف NORMAL MODE`n"
           . "i / Esc  → INSERT MODE`n`n"
           . "📜 التمرير التلقائي (Auto-Scroll):`n"
           . "  v / Ctrl+j / Space → تمرير تلقائي لأسفل ⏬`n"
