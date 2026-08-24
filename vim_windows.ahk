@@ -4,7 +4,7 @@ Persistent(true)
 InstallKeybdHook()
 
 ; =============================================================================
-;  VimWindows - Vimium + Fluent Search لويندوز
+;  VimWindows - تجربة اختصارات Vimium لنظام ويندوز
 ;  Ctrl+Win = NORMAL MODE | i أو Esc = INSERT MODE
 ; =============================================================================
 
@@ -268,11 +268,11 @@ y:: {
 }
 p::  SendInput("^v")                   ; p = لصق
 
-; ----- تفاعل الشاشة و Fluent Search -----
-f::  SendInput("^m")                   ; f = Screen Search
-+f:: SendInput("^+m")                  ; F = Screen Search Full
-s::  SendInput("{Ctrl down}{Alt down}{Alt up}{Ctrl up}") ; s = فتح Fluent Search الأساسي
-+s:: SendInput("{Ctrl down}{Alt down}{Shift down}{Shift up}{Alt up}{Ctrl up}") ; S = In-window search
+; ----- التفاعل والبحث في الشاشة -----
+f::  SendInput("^m")                   ; f = تفاعل الشاشة
++f:: SendInput("^+m")                  ; F = تفاعل الشاشة الموسع
+s::  SendInput("{Ctrl down}{Alt down}{Alt up}{Ctrl up}") ; s = البحث العام
++s:: SendInput("{Ctrl down}{Alt down}{Shift down}{Shift up}{Alt up}{Ctrl up}") ; S = البحث داخل النافذة
 
 ; ----- Vomnibar (شريط العنوان) -----
 o:: {
@@ -324,10 +324,10 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
           . "  J/K     → التبويب السابق/التالي`n"
           . "  H/L     → التاريخ السابق/التالي`n"
           . "  r       → تحديث الصفحة`n`n"
-          . "🔍 Fluent Search:`n"
-          . "  s       → فتح Fluent Search`n"
-          . "  S       → بحث داخل النافذة (In-window)`n"
-          . "  f/F     → تفاعل بالشاشة (Screen Search)`n`n"
+          . "🔍 البحث والتفاعل:`n"
+          . "  s       → البحث العام`n"
+          . "  S       → بحث داخل النافذة`n"
+          . "  f/F     → تفاعل بالشاشة`n`n"
           . "🎵 الصوت والميديا:`n"
           . "  Ctrl+↑↓ → رفع/خفض الصوت`n"
           . "  Alt+0   → كتم الصوت`n"
