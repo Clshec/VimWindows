@@ -161,6 +161,8 @@ v:: StartAutoScroll(1)                 ; v = تمرير تلقائي لأسفل
 +v:: StartAutoScroll(-1)               ; V = تمرير تلقائي لأعلى
 ^j:: StartAutoScroll(1)                ; Ctrl+j = تمرير تلقائي لأسفل
 ^k:: StartAutoScroll(-1)               ; Ctrl+k = تمرير تلقائي لأعلى
+PgDn:: StartAutoScroll(1)              ; PageDown = تمرير تلقائي لأسفل
+PgUp:: StartAutoScroll(-1)             ; PageUp = تمرير تلقائي لأعلى
 
 Space:: {
     global AutoScrollState
@@ -310,8 +312,8 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
           . "Ctrl+Win أو Home → تفعيل/إيقاف NORMAL MODE`n"
           . "i / Esc  → INSERT MODE`n`n"
           . "📜 التمرير التلقائي (Auto-Scroll):`n"
-          . "  v / Ctrl+j / Space → تمرير تلقائي لأسفل ⏬`n"
-          . "  V / Ctrl+k         → تمرير تلقائي لأعلى ⏫`n"
+          . "  v / PgDn / Ctrl+j / Space → تمرير تلقائي لأسفل ⏬`n"
+          . "  V / PgUp / Ctrl+k         → تمرير تلقائي لأعلى ⏫`n"
           . "  + / - أو ] / [     → تسريع / تبطيء التمرير`n"
           . "  Space / Esc / أي زر→ إيقاف التمرير التلقائي`n`n"
           . "📜 التمرير اليدوي (Vimium):`n"
