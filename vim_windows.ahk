@@ -2,9 +2,10 @@
 #SingleInstance Force
 Persistent(true)
 InstallKeybdHook()
+CoordMode("Mouse", "Screen")
 
 ; =============================================================================
-;  VimWindows - Robust Modal Navigation & Instant Reactive Mouse Engine
+;  VimWindows - Universal Modal Navigation & Instant Reactive Mouse Engine
 ;  Home Key: INSERT MODE (0) -> NORMAL MODE (1) -> MOUSE MODE (2) -> INSERT MODE
 ; =============================================================================
 
@@ -24,40 +25,16 @@ global IsDragging       := false
 ;  محرك الماوس التفاعلي اللحظي (Instant Responsive Mouse Engine)
 ; =============================================================================
 
-global ActiveDirs := Map("Left", false, "Right", false, "Up", false, "Down", false)
-global MouseCurSpeed    := 18.0
-global MouseBaseSpeed   := 18.0
-global MouseTopSpeed    := 220.0
-global MouseAccelFactor := 1.25
+global ActiveDirs       := Map("Left", false, "Right", false, "Up", false, "Down", false)
+global MouseCurSpeed    := 25.0
+global MouseBaseSpeed   := 25.0
+global MouseTopSpeed    := 85.0
+global MouseAccelFactor := 1.18
 global MouseTimerOn     := false
 
 ; كائن واجهة شارة الوضع المربعة الكبيرة أعلى الشاشة
 global ModeGui           := ""
 global ModeTextControl   := ""
-
-; قائمة المتصفحات المستثناة تلقائياً
-global ExcludedBrowsers := [
-    "chrome.exe",
-    "msedge.exe",
-    "brave.exe",
-    "firefox.exe",
-    "zen.exe",
-    "opera.exe",
-    "vivaldi.exe",
-    "arc.exe"
-]
-
-IsExcludedApp() {
-    global ExcludedBrowsers
-    try {
-        activeProc := WinGetProcessName("A")
-        for app in ExcludedBrowsers {
-            if (StrLower(activeProc) = StrLower(app))
-                return true
-        }
-    }
-    return false
-}
 
 ; =============================================================================
 ;  شارة الوضع المربعة الكبيرة أعلى الشاشة (Top Large Square Badge)
@@ -78,23 +55,25 @@ InitModeGui() {
 
 ShowMode() {
     global CurrentModeState, ModeGui, ModeTextControl
-    if (CurrentModeState == 1) {
-        if (!ModeGui)
-            InitModeGui()
-        ModeGui.BackColor := "1B5E20"  ; أخضر داكن لـ NORMAL MODE
-        ModeTextControl.Value := "NORMAL MODE"
-        ModeGui.Show("xCenter y10 NoActivate AutoSize")
-    } else if (CurrentModeState == 2) {
-        if (!ModeGui)
-            InitModeGui()
-        ModeGui.BackColor := "0D47A1"  ; أزرق داكن لـ MOUSE MODE
-        ModeTextControl.Value := "MOUSE MODE"
-        ModeGui.Show("xCenter y10 NoActivate AutoSize")
-    } else {
-        if (ModeGui)
-            ModeGui.Hide()
-        ToolTip("⚫ INSERT MODE", 15, 10)
-        SetTimer(() => ToolTip(), -1000)
+    try {
+        if (CurrentModeState == 1) {
+            if (!ModeGui)
+                InitModeGui()
+            ModeGui.BackColor := "1B5E20"  ; أخضر داكن لـ NORMAL MODE
+            ModeTextControl.Value := "NORMAL MODE"
+            ModeGui.Show("xCenter y10 NoActivate AutoSize")
+        } else if (CurrentModeState == 2) {
+            if (!ModeGui)
+                InitModeGui()
+            ModeGui.BackColor := "0D47A1"  ; أزرق داكن لـ MOUSE MODE
+            ModeTextControl.Value := "MOUSE MODE"
+            ModeGui.Show("xCenter y10 NoActivate AutoSize")
+        } else {
+            if (ModeGui)
+                ModeGui.Hide()
+            ToolTip("⚫ INSERT MODE", 15, 10)
+            SetTimer(() => ToolTip(), -1000)
+        }
     }
 }
 
@@ -168,13 +147,12 @@ ResetMouseDirs() {
 }
 
 MoveKeyDown(dir) {
-    global ActiveDirs, MouseTimerOn, MouseCurSpeed, MouseBaseSpeed, CurrentModeState
+    global ActiveDirs, MouseTimerOn, CurrentModeState
     if (CurrentModeState != 2)
         return
     
     if (!ActiveDirs[dir]) {
         ActiveDirs[dir] := true
-        ; تنفيذ خطوة فورية أولى بمجرد لمس الزر (Zero Latency Instant Reaction)
         PerformMouseStep()
         if (!MouseTimerOn) {
             MouseTimerOn := true
@@ -187,7 +165,6 @@ MoveKeyUp(dir) {
     global ActiveDirs, MouseTimerOn, MouseCurSpeed, MouseBaseSpeed
     ActiveDirs[dir] := false
     
-    ; فحص هل ما زال هناك اتجاه نشط
     hasActive := (ActiveDirs["Left"] || ActiveDirs["Right"] || ActiveDirs["Up"] || ActiveDirs["Down"])
     if (!hasActive) {
         MouseTimerOn := false
@@ -215,9 +192,8 @@ PerformMouseStep() {
     multiplier := (dx != 0 && dy != 0) ? 0.7071 : 1.0
     speed := MouseCurSpeed * multiplier
     
-    ; وضع الدقة (Shift) ووضع التوربو (Ctrl)
     if (GetKeyState("Shift", "P"))
-        speed := Max(1.5, speed * 0.1)
+        speed := Max(2.0, speed * 0.12)
     else if (GetKeyState("Ctrl", "P"))
         speed := speed * 2.5
     
@@ -227,9 +203,9 @@ PerformMouseStep() {
     if (dx != 0 && moveX == 0) moveX := dx
     if (dy != 0 && moveY == 0) moveY := dy
     
-    DllCall("mouse_event", "UInt", 0x0001, "Int", moveX, "Int", moveY, "UInt", 0, "UPtr", 0)
+    MouseMove(moveX, moveY, 0, "R")
+    DllCall("mouse_event", "UInt", 1, "Int", moveX, "Int", moveY, "UInt", 0, "UPtr", 0)
     
-    ; تسارع سلس وسريع
     if (MouseCurSpeed < MouseTopSpeed)
         MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccelFactor)
 }
@@ -363,7 +339,6 @@ StartGridMode() {
     ClearHints()
     ClearGrid()
     
-    CoordMode("Mouse", "Screen")
     activeHwnd := WinExist("A")
     if (!activeHwnd)
         activeHwnd := WinGetID("Program Manager")
@@ -415,7 +390,6 @@ ProcessGridChoice(char, hook, gridCenters) {
         choice := Integer(char)
         if (gridCenters.Has(choice)) {
             pt := gridCenters[choice]
-            CoordMode("Mouse", "Screen")
             MouseMove(pt.x, pt.y, 0)
         }
     }
@@ -549,7 +523,6 @@ CheckHintMatch(typed, hook, clickType) {
         hook.Stop()
         ClearHints()
         
-        CoordMode("Mouse", "Screen")
         if (clickType == "Right")
             Click(el.centerX, el.centerY, "Right")
         else
@@ -572,9 +545,9 @@ CheckHintMatch(typed, hook, clickType) {
 }
 
 ; =============================================================================
-;  الطبقة 1: وضع الماوس الخارق الفوري (State 2: MOUSE MODE 🔵)
+;  الطبقة 1: وضع الماوس الخارق الفوري (State 2: MOUSE MODE 🔵) - يعمل في كل التطبيقات
 ; =============================================================================
-#HotIf CurrentModeState == 2 and !IsExcludedApp()
+#HotIf CurrentModeState == 2
 
 Escape:: SetModeState(0)
 
@@ -623,19 +596,19 @@ Escape:: SetModeState(0)
 *o Up:: MoveKeyUp("Down")
 
 ; النقر في وضع الماوس
-Space::  Click()                       ; Space = نقر أيسر
-Enter::  Click()                       ; Enter = نقر أيسر
-m::      Click()                       ; m = نقر أيسر
-+Space:: Click("Right")                ; Shift+Space = نقر أيمن
-+Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
-r::      Click("Right")                ; r = نقر أيمن
-^Space:: Click("Middle")               ; Ctrl+Space = نقر أوسط
+*Space::  Click()                       ; Space = نقر أيسر
+*Enter::  Click()                       ; Enter = نقر أيسر
+*m::      Click()                       ; m = نقر أيسر
+*+Space:: Click("Right")                ; Shift+Space = نقر أيمن
+*+Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
+*r::      Click("Right")                ; r = نقر أيمن
+*^Space:: Click("Middle")               ; Ctrl+Space = نقر أوسط
 
 ; وضع السحب والإفلات (Drag Mode)
-v:: ToggleMouseDrag()
+*v:: ToggleMouseDrag()
 
 ; شبكة القفز في وضع الماوس
-g:: StartGridMode()
+*g:: StartGridMode()
 
 ; منع أي زر غير مستخدم من الكتابة في وضع الماوس (Modal Lockout)
 b::
@@ -677,7 +650,7 @@ Delete::
 ; =============================================================================
 ;  الطبقة 2: وضع الملاحة العام (State 1: NORMAL MODE 🟢)
 ; =============================================================================
-#HotIf CurrentModeState == 1 and !IsExcludedApp()
+#HotIf CurrentModeState == 1
 
 Escape:: {
     global AutoScrollState, GridActive
