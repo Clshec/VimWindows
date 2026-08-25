@@ -1,4 +1,4 @@
-﻿# 🟢 VimWindows
+# 🟢 VimWindows
 
 <p align="center">
   <b>منظومة ملاحة واختصارات Vimium المتكاملة مع محرك Mousemaster للتحكم بالماوس على مستوى نظام ويندوز</b>
@@ -18,6 +18,8 @@
 ---
 
 ## 📖 جدول المحتويات (Table of Contents)
+- 📚 **[دليل الاختصارات الشامل بالعربية (Arabic Guide)](docs/SHORTCUTS_AR.md)**
+- 📚 **[Complete English Shortcuts Guide](docs/SHORTCUTS_EN.md)**
 - [المعمارية الموحدة للمشروع (Unified Architecture)](#-المعمارية-الموحدة-للمشروع-unified-architecture)
 - [التثبيت الذكي الموحد (1-Click Unified Installation)](#-التثبيت-الذكي-الموحد-1-click-unified-installation)
 - [جدول الاختصارات الشامل (Complete Shortcuts Cheat Sheet)](#-جدول-الاختصارات-الشامل-complete-shortcuts-cheat-sheet)

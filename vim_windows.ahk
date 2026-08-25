@@ -5,11 +5,11 @@ InstallKeybdHook()
 
 ; =============================================================================
 ;  VimWindows - System-wide Vimium & Mouse Control Architecture
-;  Orchestrator: AutoHotkey v2 | Mouse Backend: Mousemaster
 ;  Ctrl+Win or Home = NORMAL MODE | i / Esc = INSERT MODE
 ; =============================================================================
 
 global VimMode         := false
+global InMouseMode     := false
 global gLastPress      := 0
 global yLastPress      := 0
 global AutoScrollState := 0     ; 0 = متوقف, 1 = لأسفل, -1 = لأعلى
@@ -17,14 +17,13 @@ global ScrollSpeed     := 5     ; السرعة من 1 إلى 10 (الافترا�
 global ScrollAccum     := 0.0   ; مجمع الإزاحة الكسرية للسرعات البطيئة جداً
 global IsDragging      := false
 
-; محرك تحريك الماوس المتسارع الاحتياطي (Native Fallback Mouse Engine)
-global MoveX           := 0
-global MoveY           := 0
-global CurrentMouseSpeed := 4.0
-global BaseMouseSpeed    := 4.0
-global MaxMouseSpeed     := 38.0
-global MouseAccelFactor  := 1.08
-global MouseMoving       := false
+; حالة أزرار تحريك الماوس وسرعتها
+global MouseKeysDown     := Map("h", 0, "j", 0, "k", 0, "l", 0, "Up", 0, "Down", 0, "Left", 0, "Right", 0)
+global MouseCurSpeed     := 3.5
+global MouseBaseSpeed    := 3.5
+global MouseTopSpeed     := 36.0
+global MouseAccel        := 1.08
+global MouseTimerActive  := false
 
 ; قائمة المتصفحات المستثناة تلقائياً (حيث تعمل إضافة Vimium الأصلية)
 global ExcludedBrowsers := [
@@ -50,37 +49,12 @@ IsExcludedApp() {
     return false
 }
 
-; =============================================================================
-;  إدارة وتشغيل محرك الماوس المساعد (Mousemaster Backend)
-; =============================================================================
-
-EnsureMousemasterRunning() {
-    mmExe := A_ScriptDir . "\mousemaster\mousemaster.exe"
-    mmDir := A_ScriptDir . "\mousemaster"
-    if FileExist(mmExe) {
-        if (!ProcessExist("mousemaster.exe")) {
-            try Run('"' . mmExe . '"', mmDir, "Hide")
-        }
-    }
-}
-
-EnsureMousemasterRunning()
-
-ActivateMousemaster() {
-    StopAutoScroll()
-    ClearHints()
-    ClearGrid()
-    EnsureMousemasterRunning()
-    ; إرسال نبضة F13 لتبديل وضع Mousemaster إلى وضع الماوس
-    DllCall("keybd_event", "UChar", 0x7C, "UChar", 0, "UInt", 0, "UPtr", 0)
-    DllCall("keybd_event", "UChar", 0x7C, "UChar", 0, "UInt", 2, "UPtr", 0)
-    ToolTip("🖱️ MOUSE MODE | [Esc / q] رجوع | [Space] نقر | [h/j/k/l] تحريك | [d] سحب | [g] شبكة", 15, 10)
-}
-
 ToggleVimMode() {
-    global VimMode, IsDragging
+    global VimMode, InMouseMode, IsDragging
     VimMode := !VimMode
     if (!VimMode) {
+        InMouseMode := false
+        StopAllMouseMove()
         StopAutoScroll()
         ClearHints()
         ClearGrid()
@@ -98,9 +72,13 @@ Home:: ToggleVimMode()
 
 ; مؤشر الحالة الدائم في أعلى الشاشة طالما NORMAL MODE نشط
 ShowMode() {
-    global VimMode, AutoScrollState, ScrollSpeed
+    global VimMode, InMouseMode, AutoScrollState, ScrollSpeed
     if (VimMode) {
-        ToolTip("🟢 NORMAL MODE | [Home/Esc] خروج | [m] ماوس | [f] تلميحات | [g] شبكة | [PgDn/v] سكرول", 15, 10)
+        if (InMouseMode) {
+            ToolTip("🖱️ MOUSE MODE | [h/j/k/l / الأسهم] تحريك ناعم | [Space/Enter] نقر | [d] سحب | [Esc/q/m] رجوع", 15, 10)
+        } else {
+            ToolTip("🟢 NORMAL MODE | [Home/Esc] خروج | [m] ماوس | [f] تلميحات | [g] شبكة | [PgDn/v] سكرول", 15, 10)
+        }
     } else {
         ToolTip("⚫ INSERT MODE", 15, 10)
         SetTimer(() => ToolTip(), -1200)
@@ -108,7 +86,9 @@ ShowMode() {
 }
 
 exitVim() {
-    global VimMode, IsDragging
+    global VimMode, InMouseMode, IsDragging
+    InMouseMode := false
+    StopAllMouseMove()
     StopAutoScroll()
     ClearHints()
     ClearGrid()
@@ -212,46 +192,118 @@ ShowScrollStatus() {
 }
 
 ; =============================================================================
-;  محرك الماوس الاحتياطي المباشر (Fallback Direct Mouse)
+;  محرك الماوس فائق النعومة (60 FPS Smooth Accelerated Mouse Engine)
 ; =============================================================================
 
-StartMouseMove(dx, dy) {
-    global MoveX, MoveY, CurrentMouseSpeed, BaseMouseSpeed, MouseMoving
-    if (dx != 0) MoveX := dx
-    if (dy != 0) MoveY := dy
+EnterMouseMode() {
+    global InMouseMode, VimMode
+    if (!VimMode)
+        return
+    StopAutoScroll()
+    ClearHints()
+    ClearGrid()
+    InMouseMode := true
+    ShowMode()
+}
+
+ExitMouseMode() {
+    global InMouseMode, IsDragging
+    InMouseMode := false
+    StopAllMouseMove()
+    if (IsDragging) {
+        IsDragging := false
+        Click("Up")
+    }
+    ShowMode()
+}
+
+ToggleMouseMode() {
+    global InMouseMode
+    if (InMouseMode)
+        ExitMouseMode()
+    else
+        EnterMouseMode()
+}
+
+PressMouseDir(dirKey) {
+    global MouseKeysDown, MouseTimerActive, MouseCurSpeed, MouseBaseSpeed, InMouseMode, VimMode
+    if (!VimMode || !InMouseMode)
+        return
     
-    if (!MouseMoving) {
-        MouseMoving := true
-        CurrentMouseSpeed := BaseMouseSpeed
-        SetTimer(DoMouseMove, 16)
+    MouseKeysDown[dirKey] := 1
+    if (!MouseTimerActive) {
+        MouseTimerActive := true
+        MouseCurSpeed := MouseBaseSpeed
+        SetTimer(SmoothMouseMoveStep, 16)
     }
 }
 
-StopMouseMove(dx, dy) {
-    global MoveX, MoveY, MouseMoving
-    if (dx != 0 && MoveX == dx) MoveX := 0
-    if (dy != 0 && MoveY == dy) MoveY := 0
+ReleaseMouseDir(dirKey) {
+    global MouseKeysDown, MouseTimerActive
+    MouseKeysDown[dirKey] := 0
     
-    if (MoveX == 0 && MoveY == 0) {
-        MouseMoving := false
-        SetTimer(DoMouseMove, 0)
+    hasActive := false
+    for k, v in MouseKeysDown {
+        if (v == 1) {
+            hasActive := true
+            break
+        }
+    }
+    if (!hasActive) {
+        MouseTimerActive := false
+        SetTimer(SmoothMouseMoveStep, 0)
     }
 }
 
-DoMouseMove() {
-    global MoveX, MoveY, CurrentMouseSpeed, MaxMouseSpeed, MouseAccelFactor, MouseMoving, VimMode
-    if (!VimMode || (MoveX == 0 && MoveY == 0)) {
-        MouseMoving := false
-        SetTimer(DoMouseMove, 0)
+StopAllMouseMove() {
+    global MouseKeysDown, MouseTimerActive
+    for k in MouseKeysDown
+        MouseKeysDown[k] := 0
+    MouseTimerActive := false
+    SetTimer(SmoothMouseMoveStep, 0)
+}
+
+SmoothMouseMoveStep() {
+    global MouseKeysDown, MouseCurSpeed, MouseTopSpeed, MouseAccel, MouseTimerActive, InMouseMode, VimMode
+    if (!VimMode || !InMouseMode || !MouseTimerActive) {
+        StopAllMouseMove()
         return
     }
     
-    stepX := Integer(MoveX * CurrentMouseSpeed)
-    stepY := Integer(MoveY * CurrentMouseSpeed)
-    DllCall("mouse_event", "UInt", 0x0001, "Int", stepX, "Int", stepY, "UInt", 0, "UPtr", 0)
+    dx := 0, dy := 0
+    if (MouseKeysDown["h"] || MouseKeysDown["Left"])
+        dx -= 1
+    if (MouseKeysDown["l"] || MouseKeysDown["Right"])
+        dx += 1
+    if (MouseKeysDown["k"] || MouseKeysDown["Up"])
+        dy -= 1
+    if (MouseKeysDown["j"] || MouseKeysDown["Down"])
+        dy += 1
     
-    if (CurrentMouseSpeed < MaxMouseSpeed)
-        CurrentMouseSpeed := Min(MaxMouseSpeed, CurrentMouseSpeed * MouseAccelFactor)
+    if (dx == 0 && dy == 0) {
+        MouseTimerActive := false
+        SetTimer(SmoothMouseMoveStep, 0)
+        return
+    }
+    
+    multiplier := (dx != 0 && dy != 0) ? 0.7071 : 1.0
+    speed := MouseCurSpeed * multiplier
+    
+    if (GetKeyState("Shift", "P"))
+        speed := Max(1.0, speed * 0.25)
+    else if (GetKeyState("Ctrl", "P"))
+        speed := speed * 2.0
+    
+    moveX := Integer(dx * speed)
+    moveY := Integer(dy * speed)
+    
+    if (dx != 0 && moveX == 0) moveX := dx
+    if (dy != 0 && moveY == 0) moveY := dy
+    
+    DllCall("mouse_event", "UInt", 0x0001, "Int", moveX, "Int", moveY, "UInt", 0, "UPtr", 0)
+    
+    if (MouseCurSpeed < MouseTopSpeed)
+        MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccel)
 }
 
 ToggleMouseDrag() {
@@ -259,7 +311,7 @@ ToggleMouseDrag() {
     IsDragging := !IsDragging
     if (IsDragging) {
         Click("Down")
-        ToolTip("✊ جاري السحب (DRAG MODE) - اضغط v للإفلات", 15, 35)
+        ToolTip("✊ جاري السحب (DRAG MODE) - اضغط d أو v للإفلات", 15, 35)
     } else {
         Click("Up")
         ToolTip()
@@ -500,7 +552,57 @@ CheckHintMatch(typed, hook, clickType) {
 }
 
 ; =============================================================================
-#HotIf VimMode and !IsExcludedApp()
+;  الطبقة 1: اختصارات وضع الماوس (MOUSE MODE)
+; =============================================================================
+#HotIf VimMode and InMouseMode and !IsExcludedApp()
+
+; الخروج من وضع الماوس والعودة لـ NORMAL MODE
+Escape:: ExitMouseMode()
+q::      ExitMouseMode()
+m::      ExitMouseMode()
+
+; تحريك الماوس فائق النعومة والتسارع عبر HJKL
+h::     PressMouseDir("h")
+h Up::  ReleaseMouseDir("h")
+
+j::     PressMouseDir("j")
+j Up::  ReleaseMouseDir("j")
+
+k::     PressMouseDir("k")
+k Up::  ReleaseMouseDir("k")
+
+l::     PressMouseDir("l")
+l Up::  ReleaseMouseDir("l")
+
+; تحريك الماوس عبر الأسهم أيضاً
+Left::     PressMouseDir("Left")
+Left Up::  ReleaseMouseDir("Left")
+
+Down::     PressMouseDir("Down")
+Down Up::  ReleaseMouseDir("Down")
+
+Up::       PressMouseDir("Up")
+Up Up::    ReleaseMouseDir("Up")
+
+Right::    PressMouseDir("Right")
+Right Up:: ReleaseMouseDir("Right")
+
+; النقر في وضع الماوس
+Space::  Click()                       ; Space = نقر أيسر
+Enter::  Click()                       ; Enter = نقر أيسر
++Space:: Click("Right")                ; Shift+Space = نقر أيمن
++Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
+^Space:: Click("Middle")               ; Ctrl+Space = نقر أوسط
+,::      Click("Middle")               ; , = نقر أوسط
+
+; وضع السحب والإفلات (Drag Mode)
+d:: ToggleMouseDrag()
+v:: ToggleMouseDrag()
+
+; =============================================================================
+;  الطبقة 2: اختصارات وضع الملاحة العام (NORMAL MODE)
+; =============================================================================
+#HotIf VimMode and !InMouseMode and !IsExcludedApp()
 
 ; ----- إيقاف NORMAL MODE (فقط i و Esc) -----
 Escape:: {
@@ -522,24 +624,8 @@ i:: {
     exitVim()
 }
 
-; ----- محرك الماوس المتقدم (Mousemaster Backend) -----
-m:: ActivateMousemaster()               ; m = تفعيل وضع الماوس المتطور (Mousemaster)
-
-; ----- تحريك الماوس بالأسهم (Direct Arrow Movement) -----
-Up::    StartMouseMove(0, -1)
-Down::  StartMouseMove(0, 1)
-Left::  StartMouseMove(-1, 0)
-Right:: StartMouseMove(1, 0)
-
-Up Up::    StopMouseMove(0, -1)
-Down Up::  StopMouseMove(0, 1)
-Left Up::  StopMouseMove(-1, 0)
-Right Up:: StopMouseMove(1, 0)
-
-; ----- النقر وسحب الماوس المباشر -----
-Enter::  Click()                       ; Enter = نقر أيسر
-+Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
-^Enter:: Click("Middle")               ; Ctrl+Enter = نقر أوسط
+; ----- تفعيل وضع الماوس (Enter Mouse Mode) -----
+m:: EnterMouseMode()
 
 ; ----- شبكة القفز السريع وقمة الصفحة (Grid & Top Page) -----
 g:: {
@@ -565,16 +651,14 @@ PgUp:: StartAutoScroll(-1)             ; PageUp = تمرير تلقائي لأع
 ^k:: StartAutoScroll(-1)               ; Ctrl+k = تمرير تلقائي لأعلى
 
 Space:: {
-    global AutoScrollState, IsDragging
-    if (IsDragging)
-        ToggleMouseDrag()
-    else if (AutoScrollState != 0)
+    global AutoScrollState
+    if (AutoScrollState != 0)
         StopAutoScroll()
     else
         StartAutoScroll(1)             ; Space = تشغيل / إيقاف التمرير لأسفل
 }
 
-; ----- التمرير اليدوي (مثل Vimium) -----
+; ----- التمرير والتنقل اليدوي (Vimium Manual Scroll) -----
 j:: {
     StopAutoScroll()
     SendInput("{WheelDown 2}")         ; j = تمرير للأسفل
@@ -585,11 +669,11 @@ k:: {
 }
 h:: {
     StopAutoScroll()
-    SendInput("{WheelLeft 2}")         ; h = تمرير لليسار
+    SendInput("{Left 2}")              ; h = تنقل لليسار
 }
 l:: {
     StopAutoScroll()
-    SendInput("{WheelRight 2}")        ; l = تمرير لليمين
+    SendInput("{Right 2}")             ; l = تنقل لليمين (بدون إغلاق أو فقدان الوضع)
 }
 
 d:: {
@@ -600,6 +684,17 @@ u:: {
     StopAutoScroll()
     SendInput("{WheelUp 8}")           ; u = نصف صفحة أعلى
 }
+
+; ----- تحريك الماوس المباشر بالأسهم في الوضع العادي -----
+Up::    PressMouseDir("Up")
+Up Up:: ReleaseMouseDir("Up")
+Down::  PressMouseDir("Down")
+Down Up:: ReleaseMouseDir("Down")
+Left::  PressMouseDir("Left")
+Left Up:: ReleaseMouseDir("Left")
+Right:: PressMouseDir("Right")
+Right Up:: ReleaseMouseDir("Right")
+Enter:: Click()
 
 ; ----- وضع التلميحات التفاعلي (Hint Mode) -----
 f:: StartHintMode("Left")              ; f = إظهار تلميحات العناصر والنقر عليها
@@ -626,13 +721,6 @@ f:: StartHintMode("Left")              ; f = إظهار تلميحات العن�
         ChangeScrollSpeed(1)
     else
         SendInput("{F6}")              ; . = القسم التالي
-}
-,::{
-    global AutoScrollState
-    if (AutoScrollState != 0)
-        ChangeScrollSpeed(-1)
-    else
-        SendInput("+{F6}")             ; , = القسم السابق
 }
 
 ; ----- تاريخ التصفح (Vimium: H L) -----
@@ -695,15 +783,15 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
 ; ----- مساعدة -----
 +/:: {
     help := "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
-          . "🟢 VimWindows - الاختصارات الموحدة`n"
+          . "🟢 VimWindows - الاختصارات المتكاملة`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "Ctrl+Win أو Home → تفعيل/إيقاف NORMAL MODE`n"
           . "i / Esc  → INSERT MODE`n`n"
-          . "🖱️ محرك الماوس المتقدم (Mouse Backend):`n"
-          . "  m       → تفعيل وضع الماوس المستمر (Mousemaster)`n"
-          . "            (تحريك بـ HJKL/الأسهم، نقر بـ Space، سحب بـ d)`n"
-          . "  الأسهم  → تحريك الماوس المباشر`n"
-          . "  Enter   → نقر أيسر (Left Click)`n`n"
+          . "🖱️ وضع الماوس المتطور (Mouse Mode):`n"
+          . "  m       → تفعيل وضع الماوس (h/j/k/l تحريك ناعم)`n"
+          . "  Space   → نقر أيسر | Shift+Space نقر أيمن`n"
+          . "  d       → وضع السحب والإفلات (Drag Mode)`n"
+          . "  Esc / q → رجوع لـ NORMAL MODE`n`n"
           . "🔢 شبكة القفز السريع (Grid Jump):`n"
           . "  g       → إظهار شبكة 3x3 والقفز بالأرقام (1-9)`n"
           . "  gg      → انتقال لبداية الصفحة (Top)`n`n"
