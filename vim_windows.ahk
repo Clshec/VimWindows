@@ -19,10 +19,10 @@ global IsDragging      := false
 
 ; محرك تحريك الماوس فائق السرعة والتسارع
 global MouseKeysDown     := Map("u", 0, "i", 0, "o", 0, "p", 0, "h", 0, "j", 0, "k", 0, "l", 0, "Up", 0, "Down", 0, "Left", 0, "Right", 0)
-global MouseCurSpeed     := 9.0
-global MouseBaseSpeed    := 9.0
-global MouseTopSpeed     := 85.0
-global MouseAccel        := 1.14
+global MouseCurSpeed     := 10.0
+global MouseBaseSpeed    := 10.0
+global MouseTopSpeed     := 90.0
+global MouseAccel        := 1.15
 global MouseTimerActive  := false
 
 ; كائن واجهة شارة NORMAL MODE المربعة الكبيرة
@@ -305,8 +305,6 @@ SmoothMouseMoveStep() {
     }
     
     dx := 0, dy := 0
-    ; الصف الأعلى: u = يسار, i = أعلى, o = أسفل, p = يمين
-    ; أو h/j/k/l والأسهم
     if (MouseKeysDown["u"] || MouseKeysDown["h"] || MouseKeysDown["Left"])
         dx -= 1
     if (MouseKeysDown["p"] || MouseKeysDown["l"] || MouseKeysDown["Right"])
@@ -339,7 +337,6 @@ SmoothMouseMoveStep() {
     
     DllCall("mouse_event", "UInt", 0x0001, "Int", moveX, "Int", moveY, "UInt", 0, "UPtr", 0)
     
-    ; تسارع فائق وسلس
     if (MouseCurSpeed < MouseTopSpeed)
         MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccel)
 }
@@ -669,20 +666,6 @@ Escape:: {
 ; ----- تفعيل وضع الماوس المخصص (Mouse Mode) -----
 m:: EnterMouseMode()
 
-; ----- تحريك الماوس السريع المباشر من الصف الأعلى (U I O P) دون تعطيل HJKL -----
-; u = يسار, i = أعلى, o = أسفل, p = يمين
-u::     PressMouseDir("u")
-u Up::  ReleaseMouseDir("u")
-
-i::     PressMouseDir("i")
-i Up::  ReleaseMouseDir("i")
-
-o::     PressMouseDir("o")
-o Up::  ReleaseMouseDir("o")
-
-p::     PressMouseDir("p")
-p Up::  ReleaseMouseDir("p")
-
 ; تحريك الماوس المباشر عبر الأسهم
 Up::       PressMouseDir("Up")
 Up Up::    ReleaseMouseDir("Up")
@@ -718,6 +701,10 @@ l:: {
 d:: {
     StopAutoScroll()
     SendInput("{WheelDown 8}")         ; d = نصف صفحة أسفل
+}
+u:: {
+    StopAutoScroll()
+    SendInput("{WheelUp 8}")           ; u = نصف صفحة أعلى
 }
 
 ; ----- شبكة القفز السريع وقمة الصفحة (Grid & Top Page) -----
@@ -843,7 +830,7 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
           . "Ctrl+Win أو Home → تفعيل/إيقاف NORMAL MODE`n"
           . "Esc             → INSERT MODE`n`n"
           . "🖱️ تحريك الماوس السريع (Mouse Navigation):`n"
-          . "  الصف الأعلى (u/i/o/p) أو الأسهم → تحريك الماوس بسرعة فائقة`n"
+          . "  الأسهم          → تحريك الماوس بسرعة فائقة`n"
           . "  Enter           → نقر أيسر | Shift+Enter نقر أيمن`n"
           . "  m               → تفعيل وضع الماوس المخصص`n"
           . "  Shift (أثناء الحركة) → وضع الدقة بالبكسل`n"
@@ -851,7 +838,7 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
           . "📜 التمرير والملاحة الأصلية (Vimium):`n"
           . "  j / k           → تمرير لأسفل / لأعلى`n"
           . "  h / l           → تنقل لليسار / لليمين`n"
-          . "  d               → نصف صفحة لأسفل`n"
+          . "  d / u           → نصف صفحة لأسفل / لأعلى`n"
           . "  gg / G          → أعلى / أسفل الصفحة`n`n"
           . "🎯 التلميحات والشبكة:`n"
           . "  f / F           → تلميحات العناصر (Hint Mode)`n"
