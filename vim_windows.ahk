@@ -4,7 +4,7 @@ Persistent(true)
 InstallKeybdHook()
 
 ; =============================================================================
-;  VimWindows - System-wide Navigation & Pro Mouse Engine
+;  VimWindows - System-wide Modal Navigation & Ultra-Fast Mouse Engine
 ;  Home Key: INSERT MODE (0) -> NORMAL MODE (1) -> MOUSE MODE (2) -> INSERT MODE
 ; =============================================================================
 
@@ -20,12 +20,12 @@ global ScrollSpeed      := 5     ; السرعة من 1 إلى 10 (الافترا
 global ScrollAccum      := 0.0   ; مجمع الإزاحة الكسرية
 global IsDragging       := false
 
-; محرك الماوس فائق السرعة والتسارع الفيزيائي (10x Boosted Physics Engine)
-global MouseCurSpeed     := 24.0
-global MouseBaseSpeed    := 24.0
-global MouseTopSpeed     := 280.0
-global MouseAccelFactor  := 1.22
-global MouseActiveTime   := 0
+; محرك الماوس الخارق (100x Ultra Speed Physics Engine)
+; سرعة البداية الفورية 80 بكسل وتتسارع حتى 950 بكسل/إطار (~60,000 بكسل/ثانية)
+global MouseCurSpeed     := 80.0
+global MouseBaseSpeed    := 80.0
+global MouseTopSpeed     := 950.0
+global MouseAccelFactor  := 1.35
 
 ; كائن واجهة شارة الوضع المربعة الكبيرة أعلى الشاشة
 global ModeGui           := ""
@@ -75,21 +75,18 @@ InitModeGui() {
 ShowMode() {
     global CurrentModeState, ModeGui, ModeTextControl
     if (CurrentModeState == 1) {
-        ; NORMAL MODE
         if (!ModeGui)
             InitModeGui()
-        ModeGui.BackColor := "1B5E20"  ; أخضر داكن فخم
+        ModeGui.BackColor := "1B5E20"  ; أخضر داكن لوضع NORMAL MODE
         ModeTextControl.Value := "NORMAL MODE"
         ModeGui.Show("xCenter y10 NoActivate AutoSize")
     } else if (CurrentModeState == 2) {
-        ; MOUSE MODE
         if (!ModeGui)
             InitModeGui()
-        ModeGui.BackColor := "0D47A1"  ; أزرق ملكي أنيق
+        ModeGui.BackColor := "0D47A1"  ; أزرق داكن لوضع MOUSE MODE
         ModeTextControl.Value := "MOUSE MODE"
         ModeGui.Show("xCenter y10 NoActivate AutoSize")
     } else {
-        ; INSERT MODE
         if (ModeGui)
             ModeGui.Hide()
         ToolTip("⚫ INSERT MODE", 15, 10)
@@ -106,7 +103,7 @@ SetModeState(state) {
     CurrentModeState := state
     
     if (state == 0) {
-        ; خروج إلى INSERT MODE
+        ; INSERT MODE (وضع الكتابة الطبيعي في ويندوز)
         VimMode := false
         InMouseMode := false
         SetTimer(ProcessMouseMovementLoop, 0)
@@ -119,7 +116,7 @@ SetModeState(state) {
         }
         ShowMode()
     } else if (state == 1) {
-        ; الدخول إلى NORMAL MODE
+        ; NORMAL MODE (وضع ملاحة Vimium وتمرير وتلميحات)
         VimMode := true
         InMouseMode := false
         SetTimer(ProcessMouseMovementLoop, 0)
@@ -128,7 +125,7 @@ SetModeState(state) {
         ClearGrid()
         ShowMode()
     } else if (state == 2) {
-        ; الدخول إلى MOUSE MODE
+        ; MOUSE MODE (وضع الماوس فائق السرعة 100x)
         VimMode := true
         InMouseMode := true
         StopAutoScroll()
@@ -152,11 +149,11 @@ exitVim() {
 }
 
 ; =============================================================================
-;  محرك الماوس فائق السرعة والمباشر (Pro 60 FPS Continuous Mouse Engine)
+;  محرك الماوس الخارق (100x Ultra-Speed 60 FPS Physics Engine)
 ; =============================================================================
 
 ProcessMouseMovementLoop() {
-    global CurrentModeState, MouseCurSpeed, MouseBaseSpeed, MouseTopSpeed, MouseAccelFactor, MouseActiveTime
+    global CurrentModeState, MouseCurSpeed, MouseBaseSpeed, MouseTopSpeed, MouseAccelFactor
     if (CurrentModeState != 2) {
         SetTimer(ProcessMouseMovementLoop, 0)
         return
@@ -176,18 +173,17 @@ ProcessMouseMovementLoop() {
     
     if (dx == 0 && dy == 0) {
         MouseCurSpeed := MouseBaseSpeed
-        MouseActiveTime := 0
         return
     }
     
     multiplier := (dx != 0 && dy != 0) ? 0.7071 : 1.0
     speed := MouseCurSpeed * multiplier
     
-    ; وضع الدقة (Shift) ووضع التوربو السريع (Ctrl)
+    ; وضع الدقة (Shift) يقلل السرعة للدقة بالبكسل، ووضع التوربو (Ctrl) يضاعف السرعة 3 مرات
     if (GetKeyState("Shift", "P"))
-        speed := Max(2.0, speed * 0.12)
+        speed := Max(1.0, speed * 0.04)
     else if (GetKeyState("Ctrl", "P"))
-        speed := speed * 2.5
+        speed := speed * 3.0
     
     moveX := Integer(dx * speed)
     moveY := Integer(dy * speed)
@@ -197,7 +193,7 @@ ProcessMouseMovementLoop() {
     
     DllCall("mouse_event", "UInt", 0x0001, "Int", moveX, "Int", moveY, "UInt", 0, "UPtr", 0)
     
-    ; تسارع فائق السرعة
+    ; تسارع خارق فوري
     if (MouseCurSpeed < MouseTopSpeed)
         MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccelFactor)
 }
@@ -540,7 +536,7 @@ CheckHintMatch(typed, hook, clickType) {
 }
 
 ; =============================================================================
-;  الطبقة 1: وضع الماوس الاحترافي (State 2: MOUSE MODE)
+;  الطبقة 1: وضع الماوس الخارق (State 2: MOUSE MODE 🔵)
 ; =============================================================================
 #HotIf CurrentModeState == 2 and !IsExcludedApp()
 
@@ -559,8 +555,44 @@ v:: ToggleMouseDrag()
 ; شبكة القفز في وضع الماوس
 g:: StartGridMode()
 
+; منع أي زر غير مستخدم من الكتابة في وضع الماوس (Modal Lockout)
+b::{}
+c::{}
+e::{}
+f::{}
+n::{}
+q::{}
+r::{}
+t::{}
+x::{}
+y::{}
+z::{}
+1::{}
+2::{}
+3::{}
+4::{}
+5::{}
+6::{}
+7::{}
+8::{}
+9::{}
+0::{}
+Tab::{}
+Backspace::{}
+Delete::{}
+,::{}
+.::{}
+/::{}
+;::{}
+'::{}
+[::{}
+]::{}
+\::{}
+-::{}
+=::{}
+
 ; =============================================================================
-;  الطبقة 2: وضع الملاحة العام (State 1: NORMAL MODE)
+;  الطبقة 2: وضع الملاحة العام (State 1: NORMAL MODE 🟢)
 ; =============================================================================
 #HotIf CurrentModeState == 1 and !IsExcludedApp()
 
@@ -718,6 +750,36 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
 ^Down:: SendInput("{Volume_Down}")
 !0::   SendInput("{Volume_Mute}")
 
+; ----- منع الأزرار غير المخصصة من الكتابة في Normal Mode -----
+a::{}
+b::{}
+c::{}
+e::{}
+i::{}
+m::{}
+o::{}
+q::{}
+v::{}
+w::{}
+z::{}
+1::{}
+2::{}
+3::{}
+4::{}
+5::{}
+6::{}
+7::{}
+8::{}
+9::{}
+0::{}
+Tab::{}
+Backspace::{}
+Delete::{}
+,::{}
+;::{}
+'::{}
+\::{}
+
 ; ----- مساعدة -----
 +/:: {
     help := "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
@@ -725,11 +787,11 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "Home Key: التبديل الدوري بين 3 أوضاع:`n"
           . "  ضغطة 1 → 🟢 NORMAL MODE`n"
-          . "  ضغطة 2 → 🔵 MOUSE MODE (ماوس فائق السرعة)`n"
+          . "  ضغطة 2 → 🔵 MOUSE MODE (ماوس خارق 100x)`n"
           . "  ضغطة 3 → ⚫ INSERT MODE (كتابة عادية)`n"
           . "Esc     → الخروج الفوري لوضع الكتابة`n`n"
           . "🖱️ تحكم الماوس في MOUSE MODE:`n"
-          . "  HJKL / الأسهم / WASD / UIOP → تحريك فائق السرعة (10x)`n"
+          . "  HJKL / الأسهم / WASD / UIOP → تحريك فائق السرعة (100x)`n"
           . "  Space / Enter  → نقر أيسر | Shift+Space نقر أيمن`n"
           . "  v              → وضع السحب والإفلات`n"
           . "  g              → شبكة القفز 3x3`n"
