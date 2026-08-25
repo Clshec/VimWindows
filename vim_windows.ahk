@@ -4,7 +4,7 @@ Persistent(true)
 InstallKeybdHook()
 
 ; =============================================================================
-;  VimWindows - System-wide Vimium & Mouse Control Architecture
+;  VimWindows - System-wide Vimium & High-Speed Mouse Navigation Architecture
 ;  Ctrl+Win or Home = NORMAL MODE | i / Esc = INSERT MODE
 ; =============================================================================
 
@@ -17,13 +17,17 @@ global ScrollSpeed     := 5     ; السرعة من 1 إلى 10 (الافترا�
 global ScrollAccum     := 0.0   ; مجمع الإزاحة الكسرية للسرعات البطيئة جداً
 global IsDragging      := false
 
-; حالة أزرار تحريك الماوس وسرعتها
-global MouseKeysDown     := Map("h", 0, "j", 0, "k", 0, "l", 0, "Up", 0, "Down", 0, "Left", 0, "Right", 0)
-global MouseCurSpeed     := 3.5
-global MouseBaseSpeed    := 3.5
-global MouseTopSpeed     := 36.0
-global MouseAccel        := 1.08
+; محرك تحريك الماوس فائق السرعة والتسارع
+global MouseKeysDown     := Map("u", 0, "i", 0, "o", 0, "p", 0, "h", 0, "j", 0, "k", 0, "l", 0, "Up", 0, "Down", 0, "Left", 0, "Right", 0)
+global MouseCurSpeed     := 9.0
+global MouseBaseSpeed    := 9.0
+global MouseTopSpeed     := 85.0
+global MouseAccel        := 1.14
 global MouseTimerActive  := false
+
+; كائن واجهة شارة NORMAL MODE المربعة الكبيرة
+global ModeGui           := ""
+global ModeTextControl   := ""
 
 ; قائمة المتصفحات المستثناة تلقائياً (حيث تعمل إضافة Vimium الأصلية)
 global ExcludedBrowsers := [
@@ -49,6 +53,50 @@ IsExcludedApp() {
     return false
 }
 
+; =============================================================================
+;  شارة NORMAL MODE المربعة الكبيرة أعلى الشاشة
+; =============================================================================
+
+InitModeGui() {
+    global ModeGui, ModeTextControl
+    if (ModeGui) {
+        try ModeGui.Destroy()
+    }
+    ; +AlwaysOnTop: دائماً في المقدمة
+    ; -Caption: بدون شريط عنوان
+    ; +ToolWindow: لا يظهر في شريط المهام
+    ; +E0x20: شفاف للنقرات (Click-through) حتى لا يعيق الضغط تحته
+    ModeGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20", "VimModeBadge")
+    ModeGui.BackColor := "1B5E20"  ; أخضر داكن أنيق
+    ModeGui.SetFont("s15 bold cWhite", "Segoe UI")
+    ModeGui.MarginX := 28
+    ModeGui.MarginY := 10
+    ModeTextControl := ModeGui.Add("Text", "Center", "NORMAL MODE")
+}
+
+ShowMode() {
+    global VimMode, InMouseMode, ModeGui, ModeTextControl
+    if (VimMode) {
+        if (!ModeGui)
+            InitModeGui()
+        
+        if (InMouseMode) {
+            ModeGui.BackColor := "0D47A1"  ; أزرق لوضع الماوس
+            ModeTextControl.Value := "MOUSE MODE"
+        } else {
+            ModeGui.BackColor := "1B5E20"  ; أخضر لوضع NORMAL MODE
+            ModeTextControl.Value := "NORMAL MODE"
+        }
+        ; عرض الشارة في أعلى وسط الشاشة
+        ModeGui.Show("xCenter y10 NoActivate AutoSize")
+    } else {
+        if (ModeGui)
+            ModeGui.Hide()
+        ToolTip("⚫ INSERT MODE", 15, 10)
+        SetTimer(() => ToolTip(), -1200)
+    }
+}
+
 ToggleVimMode() {
     global VimMode, InMouseMode, IsDragging
     VimMode := !VimMode
@@ -69,21 +117,6 @@ ToggleVimMode() {
 ^LWin::
 ^RWin::
 Home:: ToggleVimMode()
-
-; مؤشر الحالة الدائم في أعلى الشاشة طالما NORMAL MODE نشط
-ShowMode() {
-    global VimMode, InMouseMode, AutoScrollState, ScrollSpeed
-    if (VimMode) {
-        if (InMouseMode) {
-            ToolTip("🖱️ MOUSE MODE | [h/j/k/l / الأسهم] تحريك ناعم | [Space/Enter] نقر | [d] سحب | [Esc/q/m] رجوع", 15, 10)
-        } else {
-            ToolTip("🟢 NORMAL MODE | [Home/Esc] خروج | [m] ماوس | [f] تلميحات | [g] شبكة | [PgDn/v] سكرول", 15, 10)
-        }
-    } else {
-        ToolTip("⚫ INSERT MODE", 15, 10)
-        SetTimer(() => ToolTip(), -1200)
-    }
-}
 
 exitVim() {
     global VimMode, InMouseMode, IsDragging
@@ -149,6 +182,7 @@ StopAutoScroll() {
         AutoScrollState := 0
         ScrollAccum := 0.0
         SetTimer(DoAutoScroll, 0)
+        ToolTip()
         ShowMode()
     }
 }
@@ -166,8 +200,8 @@ ChangeScrollSpeed(delta) {
             else
                 bar .= "░"
         }
-        ToolTip("⚡ سرعة التمرير: [" . bar . "] " . ScrollSpeed . "/10`n[+ / =] تسريع  [- / Numpad-] تبطيء", 15, 10)
-        SetTimer(() => ShowMode(), -1500)
+        ToolTip("⚡ سرعة التمرير: [" . bar . "] " . ScrollSpeed . "/10`n[+ / =] تسريع  [- / Numpad-] تبطيء", 15, 60)
+        SetTimer(() => ToolTip(), -1500)
     }
 }
 
@@ -188,11 +222,11 @@ ShowScrollStatus() {
             bar .= "░"
     }
     
-    ToolTip("🟢 " . dirText . "`n⚡ السرعة: [" . bar . "] " . ScrollSpeed . "/10`n[+ / =] تسريع  [-] تبطيء  [Space/Esc] إيقاف", 15, 10)
+    ToolTip("🟢 " . dirText . "`n⚡ السرعة: [" . bar . "] " . ScrollSpeed . "/10`n[+ / =] تسريع  [-] تبطيء  [Space/Esc] إيقاف", 15, 60)
 }
 
 ; =============================================================================
-;  محرك الماوس فائق النعومة (60 FPS Smooth Accelerated Mouse Engine)
+;  محرك الماوس فائق السرعة والسلاسة (High-Speed 60 FPS Mouse Engine)
 ; =============================================================================
 
 EnterMouseMode() {
@@ -227,7 +261,7 @@ ToggleMouseMode() {
 
 PressMouseDir(dirKey) {
     global MouseKeysDown, MouseTimerActive, MouseCurSpeed, MouseBaseSpeed, InMouseMode, VimMode
-    if (!VimMode || !InMouseMode)
+    if (!VimMode)
         return
     
     MouseKeysDown[dirKey] := 1
@@ -264,20 +298,22 @@ StopAllMouseMove() {
 }
 
 SmoothMouseMoveStep() {
-    global MouseKeysDown, MouseCurSpeed, MouseTopSpeed, MouseAccel, MouseTimerActive, InMouseMode, VimMode
-    if (!VimMode || !InMouseMode || !MouseTimerActive) {
+    global MouseKeysDown, MouseCurSpeed, MouseTopSpeed, MouseAccel, MouseTimerActive, VimMode
+    if (!VimMode || !MouseTimerActive) {
         StopAllMouseMove()
         return
     }
     
     dx := 0, dy := 0
-    if (MouseKeysDown["h"] || MouseKeysDown["Left"])
+    ; الصف الأعلى: u = يسار, i = أعلى, o = أسفل, p = يمين
+    ; أو h/j/k/l والأسهم
+    if (MouseKeysDown["u"] || MouseKeysDown["h"] || MouseKeysDown["Left"])
         dx -= 1
-    if (MouseKeysDown["l"] || MouseKeysDown["Right"])
+    if (MouseKeysDown["p"] || MouseKeysDown["l"] || MouseKeysDown["Right"])
         dx += 1
-    if (MouseKeysDown["k"] || MouseKeysDown["Up"])
+    if (MouseKeysDown["i"] || MouseKeysDown["k"] || MouseKeysDown["Up"])
         dy -= 1
-    if (MouseKeysDown["j"] || MouseKeysDown["Down"])
+    if (MouseKeysDown["o"] || MouseKeysDown["j"] || MouseKeysDown["Down"])
         dy += 1
     
     if (dx == 0 && dy == 0) {
@@ -289,10 +325,11 @@ SmoothMouseMoveStep() {
     multiplier := (dx != 0 && dy != 0) ? 0.7071 : 1.0
     speed := MouseCurSpeed * multiplier
     
+    ; وضع الدقة (Shift) ووضع التوربو السريع (Ctrl)
     if (GetKeyState("Shift", "P"))
-        speed := Max(1.0, speed * 0.25)
+        speed := Max(1.5, speed * 0.18)
     else if (GetKeyState("Ctrl", "P"))
-        speed := speed * 2.0
+        speed := speed * 2.5
     
     moveX := Integer(dx * speed)
     moveY := Integer(dy * speed)
@@ -302,6 +339,7 @@ SmoothMouseMoveStep() {
     
     DllCall("mouse_event", "UInt", 0x0001, "Int", moveX, "Int", moveY, "UInt", 0, "UPtr", 0)
     
+    ; تسارع فائق وسلس
     if (MouseCurSpeed < MouseTopSpeed)
         MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccel)
 }
@@ -311,7 +349,7 @@ ToggleMouseDrag() {
     IsDragging := !IsDragging
     if (IsDragging) {
         Click("Down")
-        ToolTip("✊ جاري السحب (DRAG MODE) - اضغط d أو v للإفلات", 15, 35)
+        ToolTip("✊ DRAG MODE (جاري السحب) - اضغط d للإفلات", 15, 60)
     } else {
         Click("Up")
         ToolTip()
@@ -381,13 +419,13 @@ StartGridMode() {
         }
     }
     
-    ToolTip("🔢 اضغط رقماً من [1 إلى 9] للقفز الفوري للمنطقة | [Esc] إلغاء", 15, 10)
+    ToolTip("🔢 اضغط رقماً من [1 إلى 9] للقفز الفوري للمنطقة | [Esc] إلغاء", 15, 60)
     
     ih := InputHook("L1 T4", "{Escape}{Space}")
     ih.OnChar := (hook, char) => (
         ProcessGridChoice(char, hook, gridCenters)
     )
-    ih.OnEnd := (hook) => (ClearGrid(), ShowMode())
+    ih.OnEnd := (hook) => (ClearGrid(), ToolTip(), ShowMode())
     ih.Start()
 }
 
@@ -402,6 +440,7 @@ ProcessGridChoice(char, hook, gridCenters) {
     }
     hook.Stop()
     ClearGrid()
+    ToolTip()
     ShowMode()
 }
 
@@ -482,8 +521,8 @@ StartHintMode(clickType := "Left") {
     }
     
     if (elements.Length == 0) {
-        ToolTip("⚠️ لم يتم العثور على عناصر تفاعلية في النافذة", 15, 10)
-        SetTimer(() => ShowMode(), -1500)
+        ToolTip("⚠️ لم يتم العثور على عناصر تفاعلية في النافذة", 15, 60)
+        SetTimer(() => ToolTip(), -1500)
         return
     }
     
@@ -498,7 +537,7 @@ StartHintMode(clickType := "Left") {
         HintMap[key] := el
         
         hintGui := Gui("+AlwaysOnTop -Caption +ToolWindow +Border +E0x20", "VimHint")
-        hintGui.BackColor := "FFEB3B"  ; أصفر تلميحات Vimium
+        hintGui.BackColor := "FFEB3B"
         hintGui.SetFont("s9 bold cBlack", "Consolas")
         hintGui.MarginX := 3
         hintGui.MarginY := 1
@@ -552,16 +591,15 @@ CheckHintMatch(typed, hook, clickType) {
 }
 
 ; =============================================================================
-;  الطبقة 1: اختصارات وضع الماوس (MOUSE MODE)
+;  الطبقة 1: وضع الماوس المستقل (MOUSE MODE)
 ; =============================================================================
 #HotIf VimMode and InMouseMode and !IsExcludedApp()
 
-; الخروج من وضع الماوس والعودة لـ NORMAL MODE
 Escape:: ExitMouseMode()
 q::      ExitMouseMode()
 m::      ExitMouseMode()
 
-; تحريك الماوس فائق النعومة والتسارع عبر HJKL
+; تحريك الماوس السريع عبر HJKL
 h::     PressMouseDir("h")
 h Up::  ReleaseMouseDir("h")
 
@@ -574,7 +612,20 @@ k Up::  ReleaseMouseDir("k")
 l::     PressMouseDir("l")
 l Up::  ReleaseMouseDir("l")
 
-; تحريك الماوس عبر الأسهم أيضاً
+; تحريك الماوس عبر الصف الأعلى U I O P
+u::     PressMouseDir("u")
+u Up::  ReleaseMouseDir("u")
+
+i::     PressMouseDir("i")
+i Up::  ReleaseMouseDir("i")
+
+o::     PressMouseDir("o")
+o Up::  ReleaseMouseDir("o")
+
+p::     PressMouseDir("p")
+p Up::  ReleaseMouseDir("p")
+
+; تحريك الماوس عبر الأسهم
 Left::     PressMouseDir("Left")
 Left Up::  ReleaseMouseDir("Left")
 
@@ -593,18 +644,16 @@ Enter::  Click()                       ; Enter = نقر أيسر
 +Space:: Click("Right")                ; Shift+Space = نقر أيمن
 +Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
 ^Space:: Click("Middle")               ; Ctrl+Space = نقر أوسط
-,::      Click("Middle")               ; , = نقر أوسط
 
 ; وضع السحب والإفلات (Drag Mode)
 d:: ToggleMouseDrag()
-v:: ToggleMouseDrag()
 
 ; =============================================================================
-;  الطبقة 2: اختصارات وضع الملاحة العام (NORMAL MODE)
+;  الطبقة 2: وضع الملاحة العام (NORMAL MODE) مع الحفاظ الكامل على الاختصارات الأصلية
 ; =============================================================================
 #HotIf VimMode and !InMouseMode and !IsExcludedApp()
 
-; ----- إيقاف NORMAL MODE (فقط i و Esc) -----
+; ----- إيقاف NORMAL MODE (فقط Esc) -----
 Escape:: {
     global AutoScrollState, GridActive
     if (AutoScrollState != 0)
@@ -617,15 +666,59 @@ Escape:: {
     }
 }
 
-i:: {
+; ----- تفعيل وضع الماوس المخصص (Mouse Mode) -----
+m:: EnterMouseMode()
+
+; ----- تحريك الماوس السريع المباشر من الصف الأعلى (U I O P) دون تعطيل HJKL -----
+; u = يسار, i = أعلى, o = أسفل, p = يمين
+u::     PressMouseDir("u")
+u Up::  ReleaseMouseDir("u")
+
+i::     PressMouseDir("i")
+i Up::  ReleaseMouseDir("i")
+
+o::     PressMouseDir("o")
+o Up::  ReleaseMouseDir("o")
+
+p::     PressMouseDir("p")
+p Up::  ReleaseMouseDir("p")
+
+; تحريك الماوس المباشر عبر الأسهم
+Up::       PressMouseDir("Up")
+Up Up::    ReleaseMouseDir("Up")
+Down::     PressMouseDir("Down")
+Down Up::  ReleaseMouseDir("Down")
+Left::     PressMouseDir("Left")
+Left Up::  ReleaseMouseDir("Left")
+Right::    PressMouseDir("Right")
+Right Up:: ReleaseMouseDir("Right")
+
+; النقر المباشر بالماوس
+Enter::  Click()
++Enter:: Click("Right")
+
+; ----- اختصارات Vimium الأصلية المحفوظة بالكامل (Navigation Keys) -----
+j:: {
     StopAutoScroll()
-    ClearHints()
-    ClearGrid()
-    exitVim()
+    SendInput("{WheelDown 2}")         ; j = تمرير للأسفل
+}
+k:: {
+    StopAutoScroll()
+    SendInput("{WheelUp 2}")           ; k = تمرير للأعلى
+}
+h:: {
+    StopAutoScroll()
+    SendInput("{Left 2}")              ; h = تنقل لليسار
+}
+l:: {
+    StopAutoScroll()
+    SendInput("{Right 2}")             ; l = تنقل لليمين بأمان
 }
 
-; ----- تفعيل وضع الماوس (Enter Mouse Mode) -----
-m:: EnterMouseMode()
+d:: {
+    StopAutoScroll()
+    SendInput("{WheelDown 8}")         ; d = نصف صفحة أسفل
+}
 
 ; ----- شبكة القفز السريع وقمة الصفحة (Grid & Top Page) -----
 g:: {
@@ -657,44 +750,6 @@ Space:: {
     else
         StartAutoScroll(1)             ; Space = تشغيل / إيقاف التمرير لأسفل
 }
-
-; ----- التمرير والتنقل اليدوي (Vimium Manual Scroll) -----
-j:: {
-    StopAutoScroll()
-    SendInput("{WheelDown 2}")         ; j = تمرير للأسفل
-}
-k:: {
-    StopAutoScroll()
-    SendInput("{WheelUp 2}")           ; k = تمرير للأعلى
-}
-h:: {
-    StopAutoScroll()
-    SendInput("{Left 2}")              ; h = تنقل لليسار
-}
-l:: {
-    StopAutoScroll()
-    SendInput("{Right 2}")             ; l = تنقل لليمين (بدون إغلاق أو فقدان الوضع)
-}
-
-d:: {
-    StopAutoScroll()
-    SendInput("{WheelDown 8}")         ; d = نصف صفحة أسفل
-}
-u:: {
-    StopAutoScroll()
-    SendInput("{WheelUp 8}")           ; u = نصف صفحة أعلى
-}
-
-; ----- تحريك الماوس المباشر بالأسهم في الوضع العادي -----
-Up::    PressMouseDir("Up")
-Up Up:: ReleaseMouseDir("Up")
-Down::  PressMouseDir("Down")
-Down Up:: ReleaseMouseDir("Down")
-Left::  PressMouseDir("Left")
-Left Up:: ReleaseMouseDir("Left")
-Right:: PressMouseDir("Right")
-Right Up:: ReleaseMouseDir("Right")
-Enter:: Click()
 
 ; ----- وضع التلميحات التفاعلي (Hint Mode) -----
 f:: StartHintMode("Left")              ; f = إظهار تلميحات العناصر والنقر عليها
@@ -757,7 +812,7 @@ y:: {
 p::  SendInput("^v")                   ; p = لصق
 
 ; ----- Vomnibar (شريط العنوان والروابط) -----
-o:: {
++o:: {
     exitVim()
     SendInput("^l")
 }
@@ -786,28 +841,25 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكر�
           . "🟢 VimWindows - الاختصارات المتكاملة`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "Ctrl+Win أو Home → تفعيل/إيقاف NORMAL MODE`n"
-          . "i / Esc  → INSERT MODE`n`n"
-          . "🖱️ وضع الماوس المتطور (Mouse Mode):`n"
-          . "  m       → تفعيل وضع الماوس (h/j/k/l تحريك ناعم)`n"
-          . "  Space   → نقر أيسر | Shift+Space نقر أيمن`n"
-          . "  d       → وضع السحب والإفلات (Drag Mode)`n"
-          . "  Esc / q → رجوع لـ NORMAL MODE`n`n"
-          . "🔢 شبكة القفز السريع (Grid Jump):`n"
-          . "  g       → إظهار شبكة 3x3 والقفز بالأرقام (1-9)`n"
-          . "  gg      → انتقال لبداية الصفحة (Top)`n`n"
-          . "🎯 وضع التلميحات (Hint Mode):`n"
-          . "  f       → إظهار تلميحات العناصر والنقر عليها`n"
-          . "  F       → النقر بزر الماوس الأيمن على العنصر`n`n"
-          . "📜 التمرير التلقائي (Auto-Scroll):`n"
-          . "  PgDn / Space     → تمرير تلقائي لأسفل ⏬`n"
-          . "  PgUp             → تمرير تلقائي لأعلى ⏫`n"
-          . "  + / - أو ] / [   → تسريع / تبطيء التمرير`n`n"
-          . "📜 التمرير اليدوي (Vimium):`n"
-          . "  j/k / d/u / G    → أسفل/أعلى/نصف صفحة/نهاية`n"
-          . "  h/l              → يسار/يمين`n`n"
+          . "Esc             → INSERT MODE`n`n"
+          . "🖱️ تحريك الماوس السريع (Mouse Navigation):`n"
+          . "  الصف الأعلى (u/i/o/p) أو الأسهم → تحريك الماوس بسرعة فائقة`n"
+          . "  Enter           → نقر أيسر | Shift+Enter نقر أيمن`n"
+          . "  m               → تفعيل وضع الماوس المخصص`n"
+          . "  Shift (أثناء الحركة) → وضع الدقة بالبكسل`n"
+          . "  Ctrl (أثناء الحركة)  → وضع التوربو الفائق`n`n"
+          . "📜 التمرير والملاحة الأصلية (Vimium):`n"
+          . "  j / k           → تمرير لأسفل / لأعلى`n"
+          . "  h / l           → تنقل لليسار / لليمين`n"
+          . "  d               → نصف صفحة لأسفل`n"
+          . "  gg / G          → أعلى / أسفل الصفحة`n`n"
+          . "🎯 التلميحات والشبكة:`n"
+          . "  f / F           → تلميحات العناصر (Hint Mode)`n"
+          . "  g               → شبكة القفز 3x3`n`n"
           . "📑 التبويبات والبحث:`n"
-          . "  t/x/X / J/K      → تبويب جديد/إغلاق/استعادة/تبديل`n"
-          . "  s / S            → بحث ويندوز / بحث التطبيق`n"
+          . "  t / x / X       → تبويب جديد / إغلاق / استعادة`n"
+          . "  J / K           → التبويب السابق / التالي`n"
+          . "  s / S           → بحث ويندوز / بحث التطبيق`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     MsgBox(help, "VimWindows", 0)
 }

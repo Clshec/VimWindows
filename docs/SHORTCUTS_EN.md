@@ -1,10 +1,12 @@
 ﻿# 📖 Complete Shortcuts Reference Guide - VimWindows
 
-Welcome to the comprehensive shortcuts reference and user guide for **VimWindows**. This tool brings full modal keyboard navigation, smooth micro-scrolling, UI hint tagging, and mouse emulation to the entire Windows operating system.
+Welcome to the comprehensive shortcuts reference and user guide for **VimWindows**. This tool brings full modal keyboard navigation, smooth micro-scrolling, UI hint tagging, and high-speed mouse emulation to the entire Windows operating system.
 
 ---
 
-## 🎯 Modes Architecture
+## 🎯 Modes Architecture & Top Badge
+
+When `NORMAL MODE` is active, a prominent, clean, large badge displaying **`NORMAL MODE`** is shown at the top-center of the screen:
 
 ```text
                ┌───────────────────────────────┐
@@ -14,15 +16,15 @@ Welcome to the comprehensive shortcuts reference and user guide for **VimWindows
                               │ Press Home or Ctrl+Win
                               ▼
                ┌───────────────────────────────┐
-               │          NORMAL MODE          │
-               │  (Vim Navigation & Shortcuts) │
+               │   🟢 LARGE "NORMAL MODE" BOX  │
                └───────┬──────────────┬────────┘
                        │              │
-        Press m        │              │ Press f
-        ▼              │              ▼
+    Upper Row u/i/o/p  │              │ Press f
+    or Press m         │              │
+    ▼                  │              ▼
 ┌──────────────────┐   │      ┌──────────────────┐
-│   MOUSE MODE     │   │      │    HINT MODE     │
-│ (Smooth Pointer) │   │      │ (Yellow Badges)  │
+│ 🖱️ HIGH-SPEED    │   │      │    HINT MODE     │
+│   MOUSE MOVE     │   │      │ (Yellow Badges)  │
 └──────────────────┘   │      └──────────────────┘
                        │ Press g
                        ▼
@@ -40,31 +42,43 @@ Welcome to the comprehensive shortcuts reference and user guide for **VimWindows
 | :--- | :--- | :--- |
 | **`Home`** | 🟢 **Toggle NORMAL MODE** | Single-press to toggle navigation mode on/off. |
 | **`Ctrl + Win`** | 🟢 **Alternative Toggle** | Standard keyboard toggle for NORMAL MODE. |
-| **`Esc`** or **`i`** | ⚫ **Exit to INSERT MODE** | Instantly return to standard Windows text input. |
+| **`Esc`** | ⚫ **Exit to INSERT MODE** | Instantly return to standard Windows text input. |
 
 ---
 
-## 🖱️ 2. Accelerated Mouse Mode (`m`)
+## 🖱️ 2. High-Speed Mouse Navigation (Upper Row & Arrows)
 
-When in `NORMAL MODE`, press **`m`** to enter continuous mouse control:
+Direct high-speed mouse movement without interfering with Vimium's original `h`, `j`, `k`, `l` navigation keys:
+
+| Key | Direction / Action | Description |
+| :--- | :--- | :--- |
+| **`u`** / **`Left`** | ⬅️ **Move Left** | Instant high-speed mouse movement to the left. |
+| **`i`** / **`Up`** | ⬆️ **Move Up** | Instant high-speed mouse movement upward. |
+| **`o`** / **`Down`** | ⬇️ **Move Down** | Instant high-speed mouse movement downward. |
+| **`p`** / **`Right`** | ➡️ **Move Right** | Instant high-speed mouse movement to the right. |
+| **`Shift` (Held)** | 🐌 **Precision Mode** | Slows pointer down to 1px precision for delicate clicks. |
+| **`Ctrl` (Held)** | ⚡ **Hyper Turbo** | Multiplies speed (2.5x) for multi-monitor teleporting. |
+| **`Enter`** or **`Space`** | 👈 **Left Click** | Standard left mouse click at current cursor position. |
+| **`Shift + Enter`** | 👉 **Right Click** | Context menu click. |
+| **`m`** | 🖱️ **Dedicated Mouse Mode** | Activates isolated mouse mode (HJKL, Space, d for drag). |
+
+---
+
+## 🧭 3. Original Vimium Navigation (Fully Preserved)
 
 | Key | Action | Description |
 | :--- | :--- | :--- |
-| **`h`** / **`Left`** | ⬅️ **Move Left** | Smooth accelerated movement to the left. |
-| **`j`** / **`Down`** | ⬇️ **Move Down** | Smooth accelerated movement downward. |
-| **`k`** / **`Up`** | ⬆️ **Move Up** | Smooth accelerated movement upward. |
-| **`l`** / **`Right`** | ➡️ **Move Right** | Smooth accelerated movement to the right. |
-| **`Shift` (Held)** | 🐌 **Precision / Slow** | Slows down pointer for single-pixel precision. |
-| **`Ctrl` (Held)** | ⚡ **Turbo Speed** | Doubles pointer speed for multi-monitor jumps. |
-| **`Space`** or **`Enter`** | 👈 **Left Click** | Standard left mouse click at current cursor position. |
-| **`Shift + Space`** / **`Shift + Enter`** | 👉 **Right Click** | Context menu click. |
-| **`Ctrl + Space`** or **`,`** | 🔘 **Middle Click** | Open link in new tab or middle-click action. |
-| **`d`** or **`v`** | ✊ **Drag & Drop Mode** | Holds left mouse button down for text selection / window dragging; press again to release. |
-| **`Esc`** or **`q`** or **`m`** | ↩️ **Exit Mouse Mode** | Returns back to `NORMAL MODE`. |
+| **`j`** | ⬇️ Scroll Down | Discrete 2-step downward scroll. |
+| **`k`** | ⬆️ Scroll Up | Discrete 2-step upward scroll. |
+| **`h`** | ⬅️ Move Left | 2-step left movement safely. |
+| **`l`** | ➡️ Move Right | 2-step right movement safely. |
+| **`d`** | ⏬ Half Page Down | Fast half-screen downward jump. |
+| **`gg`** | 🔝 Top of Page | Instant jump to document/page top (`Ctrl + Home`). |
+| **`G`** (`Shift + g`) | 🔚 End of Page | Instant jump to document/page bottom (`Ctrl + End`). |
 
 ---
 
-## 🎯 3. UI Hint Mode (`f` & `F`)
+## 🎯 4. UI Hint Mode (`f` & `F`)
 
 Discovers visible interactive controls (buttons, menus, links, inputs) and places yellow tags:
 
@@ -76,7 +90,7 @@ Discovers visible interactive controls (buttons, menus, links, inputs) and place
 
 ---
 
-## 🔢 4. 3x3 Grid Jump (`g`)
+## 🔢 5. 3x3 Grid Jump (`g`)
 
 Splits the screen into 9 regions for instant cursor positioning:
 
@@ -95,12 +109,10 @@ Splits the screen into 9 regions for instant cursor positioning:
 
 - Press **`g`** to display the 3x3 grid.
 - Press **`1` to `9`** to jump cursor to that region's center.
-- Double-tap **`gg`** to jump to the top of document/page (`Ctrl + Home`).
-- Press **`G`** (`Shift + g`) to jump to the end of document/page (`Ctrl + End`).
 
 ---
 
-## 📜 5. Smooth Micro-Scrolling (~60 Hz)
+## 📜 6. Smooth Micro-Scrolling (~60 Hz)
 
 | Key | Action | Description |
 | :--- | :--- | :--- |
@@ -109,19 +121,6 @@ Splits the screen into 9 regions for instant cursor positioning:
 | **`+`** / **`=`** / **`Numpad +`** | ⚡ **Increase Speed** | Accelerates auto-scroll (Levels 1 to 10). |
 | **`-`** / **`Numpad -`** | 🐌 **Decrease Speed** | Decelerates auto-scroll down to ultra-slow level 1. |
 | **`Space`** / **`Esc`** / Any navigation key | ⏹️ **Stop Scroll** | Instantly stops auto-scrolling. |
-
----
-
-## 🧭 6. Vimium Manual Scrolling
-
-| Key | Action | Description |
-| :--- | :--- | :--- |
-| **`j`** | ⬇️ Scroll Down | Discrete 2-step downward scroll. |
-| **`k`** | ⬆️ Scroll Up | Discrete 2-step upward scroll. |
-| **`h`** | ⬅️ Move Left | 2-step left movement. |
-| **`l`** | ➡️ Move Right | 2-step right movement safely. |
-| **`d`** | ⏬ Half Page Down | Fast half-screen downward jump. |
-| **`u`** | ⏫ Half Page Up | Fast half-screen upward jump. |
 
 ---
 
@@ -139,7 +138,7 @@ Splits the screen into 9 regions for instant cursor positioning:
 | **`L`** (`Shift + l`) | ▶️ **History Forward** | Navigates forward (`Alt + Right`). |
 | **`r`** | 🔄 **Reload** | Refreshes current page/view (`F5`). |
 | **`]`** / **`.`** | ⏩ **Next Section** | Cycles to next frame/section in app (`F6`). |
-| **`[`** / **`,`** | ⏪ **Previous Section** | Cycles to previous frame/section (`Shift + F6`). |
+| **`[`** | ⏪ **Previous Section** | Cycles to previous frame/section (`Shift + F6`). |
 
 ---
 
@@ -152,7 +151,7 @@ Splits the screen into 9 regions for instant cursor positioning:
 | **`/`** | 🔎 **Search & Type** | Exits to insert mode and opens find bar (`Ctrl + F`). |
 | **`n`** | ⏭️ **Find Next** | Jumps to next search match (`F3`). |
 | **`N`** (`Shift + n`) | ⏮️ **Find Previous** | Jumps to previous search match (`Shift + F3`). |
-| **`o`** | 🌐 **Focus Address Bar** | Focuses address bar / URL bar (`Ctrl + L`). |
+| **`+o`** (`Shift + o`) | 🌐 **Focus Address Bar** | Focuses address bar / URL bar (`Ctrl + L`). |
 
 ---
 
