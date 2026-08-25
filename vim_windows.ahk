@@ -5,8 +5,9 @@ InstallKeybdHook()
 CoordMode("Mouse", "Screen")
 
 ; =============================================================================
-;  VimWindows - Universal Modal Navigation & Instant Reactive Mouse Engine
+;  VimWindows - Universal System-Wide Modal Navigation & Instant Mouse Engine
 ;  Home Key: INSERT MODE (0) -> NORMAL MODE (1) -> MOUSE MODE (2) -> INSERT MODE
+;  يعمل على مستوى النظام بالكامل وفي جميع البرامج والمتصفحات بدون أي استثناءات
 ; =============================================================================
 
 ; 0 = INSERT MODE, 1 = NORMAL MODE, 2 = MOUSE MODE
@@ -28,57 +29,61 @@ global IsDragging       := false
 global ActiveDirs       := Map("Left", false, "Right", false, "Up", false, "Down", false)
 global MouseCurSpeed    := 25.0
 global MouseBaseSpeed   := 25.0
-global MouseTopSpeed    := 85.0
+global MouseTopSpeed    := 90.0
 global MouseAccelFactor := 1.18
 global MouseTimerOn     := false
 
 ; كائن واجهة شارة الوضع المربعة الكبيرة أعلى الشاشة
-global ModeGui           := ""
-global ModeTextControl   := ""
+global ModeGui          := ""
 
 ; =============================================================================
 ;  شارة الوضع المربعة الكبيرة أعلى الشاشة (Top Large Square Badge)
 ; =============================================================================
 
-InitModeGui() {
-    global ModeGui, ModeTextControl
-    if (ModeGui) {
-        try ModeGui.Destroy()
-    }
-    ModeGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20", "VimModeBadge")
-    ModeGui.BackColor := "1B5E20"
-    ModeGui.SetFont("s16 bold cWhite", "Segoe UI")
-    ModeGui.MarginX := 32
-    ModeGui.MarginY := 12
-    ModeTextControl := ModeGui.Add("Text", "Center", "NORMAL MODE")
-}
-
 ShowMode() {
-    global CurrentModeState, ModeGui, ModeTextControl
+    global CurrentModeState, ModeGui
     try {
+        if (ModeGui) {
+            ModeGui.Destroy()
+            ModeGui := ""
+        }
+        
         if (CurrentModeState == 1) {
-            if (!ModeGui)
-                InitModeGui()
-            ModeGui.BackColor := "1B5E20"  ; أخضر داكن لـ NORMAL MODE
-            ModeTextControl.Value := "NORMAL MODE"
-            ModeGui.Show("xCenter y10 NoActivate AutoSize")
+            ; 🟢 NORMAL MODE
+            ModeGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20", "VimModeBadge")
+            ModeGui.BackColor := "1B5E20"  ; أخضر داكن فخم
+            ModeGui.SetFont("s16 bold cWhite", "Segoe UI")
+            ModeGui.MarginX := 36
+            ModeGui.MarginY := 12
+            ModeGui.Add("Text", "Center +BackgroundTrans", "🟢 NORMAL MODE")
+            ModeGui.Show("xCenter y12 NoActivate AutoSize")
         } else if (CurrentModeState == 2) {
-            if (!ModeGui)
-                InitModeGui()
-            ModeGui.BackColor := "0D47A1"  ; أزرق داكن لـ MOUSE MODE
-            ModeTextControl.Value := "MOUSE MODE"
-            ModeGui.Show("xCenter y10 NoActivate AutoSize")
+            ; 🔵 MOUSE MODE
+            ModeGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20", "VimModeBadge")
+            ModeGui.BackColor := "0D47A1"  ; أزرق ملكي أنيق
+            ModeGui.SetFont("s16 bold cWhite", "Segoe UI")
+            ModeGui.MarginX := 36
+            ModeGui.MarginY := 12
+            ModeGui.Add("Text", "Center +BackgroundTrans", "🔵 MOUSE MODE")
+            ModeGui.Show("xCenter y12 NoActivate AutoSize")
         } else {
-            if (ModeGui)
-                ModeGui.Hide()
+            ; ⚫ INSERT MODE
             ToolTip("⚫ INSERT MODE", 15, 10)
             SetTimer(() => ToolTip(), -1000)
         }
+    } catch {
+        if (CurrentModeState == 1)
+            ToolTip("🟢 NORMAL MODE", 15, 10)
+        else if (CurrentModeState == 2)
+            ToolTip("🔵 MOUSE MODE", 15, 10)
+        else
+            ToolTip("⚫ INSERT MODE", 15, 10)
+        SetTimer(() => ToolTip(), -1200)
     }
 }
 
 ; =============================================================================
-;  إدارة دورة الأوضاع عبر زر Home حصراً (Home Key Mode Cycler)
+;  إدارة دورة الأوضاع عبر زر Home (Home Key Mode Cycler)
 ; =============================================================================
 
 SetModeState(state) {
@@ -86,7 +91,7 @@ SetModeState(state) {
     CurrentModeState := state
     
     if (state == 0) {
-        ; INSERT MODE
+        ; INSERT MODE (وضع الكتابة الطبيعي في ويندوز)
         VimMode := false
         InMouseMode := false
         ResetMouseDirs()
@@ -99,7 +104,7 @@ SetModeState(state) {
         }
         ShowMode()
     } else if (state == 1) {
-        ; NORMAL MODE
+        ; NORMAL MODE (وضع ملاحة Vimium والتمرير والتلميحات)
         VimMode := true
         InMouseMode := false
         ResetMouseDirs()
@@ -108,7 +113,7 @@ SetModeState(state) {
         ClearGrid()
         ShowMode()
     } else if (state == 2) {
-        ; MOUSE MODE
+        ; MOUSE MODE (وضع الماوس فائق السرعة والاستجابة)
         VimMode := true
         InMouseMode := true
         ResetMouseDirs()
@@ -125,7 +130,11 @@ CycleMode() {
     SetModeState(nextState)
 }
 
-Home:: CycleMode()
+; مفاتيح التبديل الدوري (Home أو NumpadHome أو Ctrl+Win)
+Home::
+NumpadHome::
+^LWin::
+^RWin:: CycleMode()
 
 exitVim() {
     SetModeState(0)
@@ -545,7 +554,7 @@ CheckHintMatch(typed, hook, clickType) {
 }
 
 ; =============================================================================
-;  الطبقة 1: وضع الماوس الخارق الفوري (State 2: MOUSE MODE 🔵) - يعمل في كل التطبيقات
+;  الطبقة 1: وضع الماوس الخارق الفوري (State 2: MOUSE MODE 🔵) - شامل لكل البرامج
 ; =============================================================================
 #HotIf CurrentModeState == 2
 
@@ -648,7 +657,7 @@ Delete::
 }
 
 ; =============================================================================
-;  الطبقة 2: وضع الملاحة العام (State 1: NORMAL MODE 🟢)
+;  الطبقة 2: وضع الملاحة العام (State 1: NORMAL MODE 🟢) - شامل لكل البرامج
 ; =============================================================================
 #HotIf CurrentModeState == 1
 
