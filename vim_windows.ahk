@@ -3,10 +3,12 @@
 Persistent(true)
 InstallKeybdHook()
 CoordMode("Mouse", "Screen")
+SetCapsLockState("AlwaysOff")
 
 ; =============================================================================
-;  VimWindows - Universal Orchestrator & Mousemaster Backend Integration
+;  VimWindows - Master Orchestrator & Native High-Performance Modal Navigation
 ;  Home Key: INSERT MODE (0) -> NORMAL MODE (1) -> MOUSE MODE (2) -> INSERT MODE
+;  CapsLock Key: تبديل لغة الإدخال الفوري بضغطة واحدة (العربية ↔ الإنجليزية)
 ; =============================================================================
 
 ; 0 = INSERT MODE, 1 = NORMAL MODE, 2 = MOUSE MODE
@@ -19,9 +21,42 @@ global yLastPress       := 0
 global AutoScrollState  := 0     ; 0 = متوقف, 1 = لأسفل, -1 = لأعلى
 global ScrollSpeed      := 5     ; السرعة من 1 إلى 10 (الافتراضي 5)
 global ScrollAccum      := 0.0   ; مجمع الإزاحة الكسرية
+global IsDragging       := false
+
+; =============================================================================
+;  محرك الماوس المباشر فائق السرعة والاستجابة (100% Native Mouse Engine)
+; =============================================================================
+
+global ActiveDirs       := Map("Left", false, "Right", false, "Up", false, "Down", false)
+global MouseCurSpeed    := 30.0
+global MouseBaseSpeed   := 30.0
+global MouseTopSpeed    := 110.0
+global MouseAccelFactor := 1.22
+global MouseTimerOn     := false
 
 ; كائن واجهة شارة الوضع المربعة الكبيرة أعلى الشاشة
 global ModeGui          := ""
+
+; =============================================================================
+;  تبديل لغة الإدخال الفوري بضغطة واحدة على CapsLock (Mac / Pro Style)
+; =============================================================================
+
+SwitchLanguage() {
+    SendInput("#{Space}")
+}
+
+; ضغطة واحدة سريعة على CapsLock تبدل لغة الإدخال فوراً
+*CapsLock:: {
+    SwitchLanguage()
+}
+
+; الضغط على Shift + CapsLock يُفعل / يُعطل وضع الحروف الكبيرة (Caps Lock الأصلي)
++CapsLock:: {
+    curState := GetKeyState("CapsLock", "T")
+    SetCapsLockState(curState ? "AlwaysOff" : "On")
+    ToolTip(curState ? "🔤 CAPS LOCK: OFF" : "🔠 CAPS LOCK: ON", 15, 60)
+    SetTimer(() => ToolTip(), -1200)
+}
 
 ; =============================================================================
 ;  شارة الوضع المربعة الكبيرة أعلى الشاشة (Top Large Square Badge)
@@ -74,41 +109,40 @@ ShowMode() {
 ; =============================================================================
 
 SetModeState(state) {
-    global CurrentModeState, VimMode, InMouseMode
-    oldState := CurrentModeState
+    global CurrentModeState, VimMode, InMouseMode, IsDragging
     CurrentModeState := state
-    
-    ; إذا كنا نخرج من MOUSE MODE، نقوم بإيقاف محرك Mousemaster
-    if (oldState == 2 && state != 2) {
-        SendInput("{F13}")
-    }
     
     if (state == 0) {
         ; INSERT MODE (وضع الكتابة الطبيعي في ويندوز)
         VimMode := false
         InMouseMode := false
+        ResetMouseDirs()
         StopAutoScroll()
         ClearHints()
         ClearGrid()
+        if (IsDragging) {
+            IsDragging := false
+            Click("Up")
+        }
         ShowMode()
     } else if (state == 1) {
         ; NORMAL MODE (وضع ملاحة Vimium والتمرير والتلميحات)
         VimMode := true
         InMouseMode := false
+        ResetMouseDirs()
         StopAutoScroll()
         ClearHints()
         ClearGrid()
         ShowMode()
     } else if (state == 2) {
-        ; MOUSE MODE (تفعيل محرك Mousemaster فائق النعومة والسرعة)
+        ; MOUSE MODE (وضع الماوس فائق السرعة والاستجابة اللحظية)
         VimMode := true
         InMouseMode := true
+        ResetMouseDirs()
         StopAutoScroll()
         ClearHints()
         ClearGrid()
         ShowMode()
-        ; إرسال إشارة F13 لتفعيل وضع الماوس داخل Mousemaster
-        SendInput("{F13}")
     }
 }
 
@@ -126,6 +160,101 @@ NumpadHome::
 
 exitVim() {
     SetModeState(0)
+}
+
+; =============================================================================
+;  دوال محرك الماوس الفوري المباشر (Instant Single-Key Mouse Engine)
+; =============================================================================
+
+ResetMouseDirs() {
+    global ActiveDirs, MouseTimerOn, MouseCurSpeed, MouseBaseSpeed
+    ActiveDirs["Left"] := false
+    ActiveDirs["Right"] := false
+    ActiveDirs["Up"] := false
+    ActiveDirs["Down"] := false
+    MouseTimerOn := false
+    SetTimer(PerformMouseStep, 0)
+    MouseCurSpeed := MouseBaseSpeed
+}
+
+MoveKeyDown(dir) {
+    global ActiveDirs, MouseTimerOn, CurrentModeState
+    if (CurrentModeState != 2)
+        return
+    
+    if (!ActiveDirs[dir]) {
+        ActiveDirs[dir] := true
+        PerformMouseStep()
+        if (!MouseTimerOn) {
+            MouseTimerOn := true
+            SetTimer(PerformMouseStep, 16)
+        }
+    }
+}
+
+MoveKeyUp(dir) {
+    global ActiveDirs, MouseTimerOn, MouseCurSpeed, MouseBaseSpeed
+    ActiveDirs[dir] := false
+    
+    hasActive := (ActiveDirs["Left"] || ActiveDirs["Right"] || ActiveDirs["Up"] || ActiveDirs["Down"])
+    if (!hasActive) {
+        MouseTimerOn := false
+        SetTimer(PerformMouseStep, 0)
+        MouseCurSpeed := MouseBaseSpeed
+    }
+}
+
+PerformMouseStep() {
+    global ActiveDirs, MouseCurSpeed, MouseBaseSpeed, MouseTopSpeed, MouseAccelFactor, CurrentModeState
+    if (CurrentModeState != 2) {
+        ResetMouseDirs()
+        return
+    }
+    
+    dx := 0, dy := 0
+    if (ActiveDirs["Left"])  dx -= 1
+    if (ActiveDirs["Right"]) dx += 1
+    if (ActiveDirs["Up"])    dy -= 1
+    if (ActiveDirs["Down"])  dy += 1
+    
+    if (dx == 0 && dy == 0)
+        return
+    
+    multiplier := (dx != 0 && dy != 0) ? 0.7071 : 1.0
+    speed := MouseCurSpeed * multiplier
+    
+    ; وضع الدقة (Shift) ووضع التوربو (Ctrl)
+    if (GetKeyState("Shift", "P"))
+        speed := Max(2.0, speed * 0.12)
+    else if (GetKeyState("Ctrl", "P"))
+        speed := speed * 2.5
+    
+    moveX := Integer(dx * speed)
+    moveY := Integer(dy * speed)
+    
+    if (dx != 0 && moveX == 0) moveX := dx
+    if (dy != 0 && moveY == 0) moveY := dy
+    
+    ; تحريك المؤشر الفوري بنظامين متكاملين لضمان الاستجابة 100%
+    MouseMove(moveX, moveY, 0, "R")
+    DllCall("mouse_event", "UInt", 1, "Int", moveX, "Int", moveY, "UInt", 0, "UPtr", 0)
+    
+    ; تسارع مستمر ناعم وفائق السرعة
+    if (MouseCurSpeed < MouseTopSpeed)
+        MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccelFactor)
+}
+
+ToggleMouseDrag() {
+    global IsDragging
+    IsDragging := !IsDragging
+    if (IsDragging) {
+        Click("Down")
+        ToolTip("✊ DRAG MODE (جاري السحب) - اضغط v أو Space للإفلات", 15, 60)
+    } else {
+        Click("Up")
+        ToolTip()
+        ShowMode()
+    }
 }
 
 ; =============================================================================
@@ -450,15 +579,110 @@ CheckHintMatch(typed, hook, clickType) {
 }
 
 ; =============================================================================
-;  الطبقة 1: وضع الماوس المتخصص (State 2: MOUSE MODE 🔵 - عبر Mousemaster Backend)
+;  الطبقة 1: وضع الماوس الخارق المباشر (State 2: MOUSE MODE 🔵)
 ; =============================================================================
 #HotIf CurrentModeState == 2
 
-; زر Esc يخرج من وضع الماوس ويعود لوضع الكتابة
 Escape:: SetModeState(0)
 
+; تحريك لليسار (Left)
+*h::
+*Left::
+*a::
+*u:: MoveKeyDown("Left")
+
+*h Up::
+*Left Up::
+*a Up::
+*u Up:: MoveKeyUp("Left")
+
+; تحريك لليمين (Right)
+*l::
+*Right::
+*d::
+*p:: MoveKeyDown("Right")
+
+*l Up::
+*Right Up::
+*d Up::
+*p Up:: MoveKeyUp("Right")
+
+; تحريك لأعلى (Up)
+*k::
+*Up::
+*w::
+*i:: MoveKeyDown("Up")
+
+*k Up::
+*Up Up::
+*w Up::
+*i Up:: MoveKeyUp("Up")
+
+; تحريك لأسفل (Down)
+*j::
+*Down::
+*s::
+*o:: MoveKeyDown("Down")
+
+*j Up::
+*Down Up::
+*s Up::
+*o Up:: MoveKeyUp("Down")
+
+; النقر في وضع الماوس
+*Space::  Click()                       ; Space = نقر أيسر
+*Enter::  Click()                       ; Enter = نقر أيسر
+*m::      Click()                       ; m = نقر أيسر
+*+Space:: Click("Right")                ; Shift+Space = نقر أيمن
+*+Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
+*r::      Click("Right")                ; r = نقر أيمن
+*^Space:: Click("Middle")               ; Ctrl+Space = نقر أوسط
+
+; وضع السحب والإفلات (Drag Mode)
+*v:: ToggleMouseDrag()
+
+; شبكة القفز في وضع الماوس
+*g:: StartGridMode()
+
+; منع أي زر غير مستخدم من الكتابة في وضع الماوس (Modal Lockout)
+b::
+c::
+e::
+f::
+n::
+q::
+t::
+x::
+y::
+z::
+1::
+2::
+3::
+4::
+5::
+6::
+7::
+8::
+9::
+0::
+Tab::
+Backspace::
+Delete::
+,::
+.::
+/::
+;::
+'::
+[::
+]::
+\::
+-::
+=:: {
+    return
+}
+
 ; =============================================================================
-;  الطبقة 2: وضع الملاحة العام (State 1: NORMAL MODE 🟢) - شامل لكل البرامج
+;  الطبقة 2: وضع الملاحة العام (State 1: NORMAL MODE 🟢)
 ; =============================================================================
 #HotIf CurrentModeState == 1
 
@@ -652,13 +876,15 @@ Delete::
     help := "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "🟢 VimWindows - الاختصارات المتكاملة`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
+          . "CapsLock: تبديل فوري للغة الإدخال (عربي ↔ إنجليزي)`n"
+          . "Shift+CapsLock: تفعيل / تعطيل الحروف الكبيرة`n`n"
           . "Home Key: التبديل الدوري بين 3 أوضاع:`n"
           . "  ضغطة 1 → 🟢 NORMAL MODE`n"
           . "  ضغطة 2 → 🔵 MOUSE MODE (ماوس فوري خارق)`n"
           . "  ضغطة 3 → ⚫ INSERT MODE (كتابة عادية)`n"
           . "Esc     → الخروج الفوري لوضع الكتابة`n`n"
           . "🖱️ تحكم الماوس في MOUSE MODE:`n"
-          . "  HJKL / الأسهم / WASD / UIOP → تحريك فائق السرعة والانسيابية`n"
+          . "  HJKL / الأسهم / WASD / UIOP → تحريك فوري بضغطة زر واحدة`n"
           . "  Space / Enter / m → نقر أيسر | Shift+Space / r نقر أيمن`n"
           . "  v              → وضع السحب والإفلات`n"
           . "  g              → شبكة القفز 3x3`n"

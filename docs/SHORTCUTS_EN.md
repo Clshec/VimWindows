@@ -1,12 +1,21 @@
 ﻿# 📖 Complete Shortcuts Reference Guide - VimWindows
 
-Welcome to the comprehensive shortcuts reference and user guide for **VimWindows**. This tool brings full modal keyboard navigation, 10x high-speed mouse physics emulation, UI hint tagging, and smooth micro-scrolling to Windows via a single **`Home`** key cycler.
+Welcome to the comprehensive shortcuts reference and user guide for **VimWindows**. This tool brings full modal keyboard navigation, instant mouse physics emulation, UI hint tagging, smooth micro-scrolling, and single-tap **`CapsLock`** language switching to Windows.
+
+---
+
+## 🌐 Instant Language Switcher (CapsLock)
+
+| Shortcut | Function | Description |
+| :--- | :--- | :--- |
+| **`CapsLock`** | 🌐 **Toggle Language (Instant)** | Single-tap on CapsLock switches keyboard language instantly (Mac & Pro style). |
+| **`Shift + CapsLock`** | 🔠 **Toggle Caps Lock** | Enables / disables native Caps Lock uppercase state. |
 
 ---
 
 ## 🎯 3-State Mode Cycler (via Home Key)
 
-The **`Home`** key is the single master toggle for cycling through the three operating modes:
+The **`Home`** key (or `NumpadHome` or `Ctrl + Win`) is the single master toggle for cycling through the three operating modes:
 
 ```text
                ┌─────────────────────────────────────────┐
@@ -23,7 +32,7 @@ The **`Home`** key is the single master toggle for cycling through the three ope
                                     ▼
                ┌─────────────────────────────────────────┐
                │          🔵 2. MOUSE MODE               │
-               │      (10x Boosted Mouse Engine)         │
+               │      (Direct Instant Mouse Engine)      │
                └────────────────────┬────────────────────┘
                                     │ Press Home (3rd click) or Esc
                                     ▼
@@ -33,23 +42,23 @@ The **`Home`** key is the single master toggle for cycling through the three ope
 ```
 
 - **Click 1**: `🟢 NORMAL MODE` (Large green badge `NORMAL MODE` at top center).
-- **Click 2**: `🔵 MOUSE MODE` (Large blue badge `MOUSE MODE` with 10x instant mouse speed).
+- **Click 2**: `🔵 MOUSE MODE` (Large blue badge `MOUSE MODE` with instant mouse speed).
 - **Click 3**: `⚫ INSERT MODE` (Back to standard Windows text input).
 - **`Esc` Key**: Directly exits to `INSERT MODE` from any active mode.
 
 ---
 
-## 🖱️ 1. High-Speed Mouse Mode (State 2 🔵)
+## 🖱️ 1. Instant Mouse Mode (State 2 🔵)
 
-When in `MOUSE MODE`, the pointer is driven by a zero-latency continuous physics loop (10x faster):
+When in `MOUSE MODE`, the pointer is driven by a zero-latency continuous physics loop:
 
 | Key | Action | Description |
 | :--- | :--- | :--- |
-| **`h / j / k / l`** or **Arrows** or **`WASD`** or **`UIOP`** | 🖱️ **Instant Mouse Move** | Ultra-responsive continuous physics movement (10x faster). |
+| **`h / j / k / l`** or **Arrows** or **`WASD`** or **`UIOP`** | 🖱️ **Instant Mouse Move** | Ultra-responsive continuous physics movement with zero latency. |
 | **`Shift` (Held)** | 🐌 **Pixel Precision** | Slows pointer down to 1px precision for delicate clicks. |
 | **`Ctrl` (Held)** | ⚡ **Hyper Turbo** | Multiplies speed (2.5x) for multi-monitor jumps. |
-| **`Space`** or **`Enter`** | 👈 **Left Click** | Standard left click at cursor position. |
-| **`Shift + Space`** or **`Shift + Enter`** | 👉 **Right Click** | Context menu right click. |
+| **`Space`** or **`Enter`** or **`m`** | 👈 **Left Click** | Standard left click at cursor position. |
+| **`Shift + Space`** or **`Shift + Enter`** or **`r`** | 👉 **Right Click** | Context menu right click. |
 | **`Ctrl + Space`** | 🔘 **Middle Click** | Open link in new tab. |
 | **`v`** | ✊ **Drag & Drop Mode** | Toggles left mouse button hold for selection / dragging. |
 | **`g`** | 🔢 **3x3 Grid Jump** | Displays 3x3 quadrant grid for instant teleporting. |
