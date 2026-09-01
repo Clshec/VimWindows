@@ -6,16 +6,12 @@ CoordMode("Mouse", "Screen")
 SetCapsLockState("AlwaysOff")
 
 ; =============================================================================
-;  VimWindows - Master Orchestrator & Native High-Performance Modal Navigation
-;  Home Key: INSERT MODE (0) -> NORMAL MODE (1) -> MOUSE MODE (2) -> INSERT MODE
-;  CapsLock Key: تبديل لغة الإدخال الفوري بضغطة واحدة (العربية ↔ الإنجليزية)
+;  VimWindows - 100% Native Single-Mode Navigation & WASD Mouse Engine
+;  Home / NumpadHome / Ctrl+Win = Toggle NORMAL MODE ↔ INSERT MODE
+;  CapsLock = تبديل فوري للغة الإدخال (عربي ↔ إنجليزي) بنمط Mac & Pro
 ; =============================================================================
 
-; 0 = INSERT MODE, 1 = NORMAL MODE, 2 = MOUSE MODE
-global CurrentModeState := 0
 global VimMode          := false
-global InMouseMode      := false
-
 global gLastPress       := 0
 global yLastPress       := 0
 global AutoScrollState  := 0     ; 0 = متوقف, 1 = لأسفل, -1 = لأعلى
@@ -23,18 +19,13 @@ global ScrollSpeed      := 5     ; السرعة من 1 إلى 10 (الافترا
 global ScrollAccum      := 0.0   ; مجمع الإزاحة الكسرية
 global IsDragging       := false
 
-; =============================================================================
-;  محرك الماوس المباشر فائق السرعة والاستجابة (100% Native Mouse Engine)
-; =============================================================================
+; محرك الماوس الفيزيائي المباشر (Direct Win32 Hardware Polling)
+global MouseCurSpeed    := 28.0
+global MouseBaseSpeed   := 28.0
+global MouseTopSpeed    := 120.0
+global MouseAccelFactor := 1.20
 
-global ActiveDirs       := Map("Left", false, "Right", false, "Up", false, "Down", false)
-global MouseCurSpeed    := 30.0
-global MouseBaseSpeed   := 30.0
-global MouseTopSpeed    := 110.0
-global MouseAccelFactor := 1.22
-global MouseTimerOn     := false
-
-; كائن واجهة شارة الوضع المربعة الكبيرة أعلى الشاشة
+; كائن شارة NORMAL MODE في أعلى الشاشة
 global ModeGui          := ""
 
 ; =============================================================================
@@ -59,18 +50,18 @@ SwitchLanguage() {
 }
 
 ; =============================================================================
-;  شارة الوضع المربعة الكبيرة أعلى الشاشة (Top Large Square Badge)
+;  شارة NORMAL MODE المربعة الكبيرة في أعلى الشاشة
 ; =============================================================================
 
 ShowMode() {
-    global CurrentModeState, ModeGui
+    global VimMode, ModeGui
     try {
         if (ModeGui) {
             ModeGui.Destroy()
             ModeGui := ""
         }
         
-        if (CurrentModeState == 1) {
+        if (VimMode) {
             ; 🟢 NORMAL MODE
             ModeGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20", "VimModeBadge")
             ModeGui.BackColor := "1B5E20"  ; أخضر داكن فخم
@@ -79,25 +70,14 @@ ShowMode() {
             ModeGui.MarginY := 12
             ModeGui.Add("Text", "Center +BackgroundTrans", "🟢 NORMAL MODE")
             ModeGui.Show("xCenter y12 NoActivate AutoSize")
-        } else if (CurrentModeState == 2) {
-            ; 🔵 MOUSE MODE
-            ModeGui := Gui("+AlwaysOnTop -Caption +ToolWindow +E0x20", "VimModeBadge")
-            ModeGui.BackColor := "0D47A1"  ; أزرق ملكي أنيق
-            ModeGui.SetFont("s16 bold cWhite", "Segoe UI")
-            ModeGui.MarginX := 36
-            ModeGui.MarginY := 12
-            ModeGui.Add("Text", "Center +BackgroundTrans", "🔵 MOUSE MODE")
-            ModeGui.Show("xCenter y12 NoActivate AutoSize")
         } else {
             ; ⚫ INSERT MODE
             ToolTip("⚫ INSERT MODE", 15, 10)
             SetTimer(() => ToolTip(), -1000)
         }
     } catch {
-        if (CurrentModeState == 1)
+        if (VimMode)
             ToolTip("🟢 NORMAL MODE", 15, 10)
-        else if (CurrentModeState == 2)
-            ToolTip("🔵 MOUSE MODE", 15, 10)
         else
             ToolTip("⚫ INSERT MODE", 15, 10)
         SetTimer(() => ToolTip(), -1200)
@@ -105,18 +85,23 @@ ShowMode() {
 }
 
 ; =============================================================================
-;  إدارة دورة الأوضاع عبر زر Home (Home Key Mode Cycler)
+;  إدارة تفعيل وإيقاف الوضع بنقرة واحدة (Single-Mode Toggle)
 ; =============================================================================
 
-SetModeState(state) {
-    global CurrentModeState, VimMode, InMouseMode, IsDragging
-    CurrentModeState := state
+SetVimState(state) {
+    global VimMode, IsDragging
+    VimMode := state
     
-    if (state == 0) {
-        ; INSERT MODE (وضع الكتابة الطبيعي في ويندوز)
-        VimMode := false
-        InMouseMode := false
-        ResetMouseDirs()
+    if (VimMode) {
+        ; تفعيل وضع الملاحة والماوس
+        StopAutoScroll()
+        ClearHints()
+        ClearGrid()
+        ShowMode()
+        SetTimer(ProcessMouseMovement, 16)
+    } else {
+        ; إيقاف والعودة لوضع الكتابة العادي
+        SetTimer(ProcessMouseMovement, 0)
         StopAutoScroll()
         ClearHints()
         ClearGrid()
@@ -125,103 +110,53 @@ SetModeState(state) {
             Click("Up")
         }
         ShowMode()
-    } else if (state == 1) {
-        ; NORMAL MODE (وضع ملاحة Vimium والتمرير والتلميحات)
-        VimMode := true
-        InMouseMode := false
-        ResetMouseDirs()
-        StopAutoScroll()
-        ClearHints()
-        ClearGrid()
-        ShowMode()
-    } else if (state == 2) {
-        ; MOUSE MODE (وضع الماوس فائق السرعة والاستجابة اللحظية)
-        VimMode := true
-        InMouseMode := true
-        ResetMouseDirs()
-        StopAutoScroll()
-        ClearHints()
-        ClearGrid()
-        ShowMode()
     }
 }
 
-CycleMode() {
-    global CurrentModeState
-    nextState := Mod(CurrentModeState + 1, 3)
-    SetModeState(nextState)
+ToggleVimMode() {
+    global VimMode
+    SetVimState(!VimMode)
 }
 
-; مفاتيح التبديل الدوري (Home أو NumpadHome أو Ctrl+Win)
+; مفتاح التبديل الموحد (Home أو NumpadHome أو Ctrl+Win)
 Home::
 NumpadHome::
 ^LWin::
-^RWin:: CycleMode()
+^RWin:: ToggleVimMode()
 
 exitVim() {
-    SetModeState(0)
+    SetVimState(false)
 }
 
 ; =============================================================================
-;  دوال محرك الماوس الفوري المباشر (Instant Single-Key Mouse Engine)
+;  محرك الماوس المباشر (Direct WASD Hardware Polling via Win32 API)
 ; =============================================================================
 
-ResetMouseDirs() {
-    global ActiveDirs, MouseTimerOn, MouseCurSpeed, MouseBaseSpeed
-    ActiveDirs["Left"] := false
-    ActiveDirs["Right"] := false
-    ActiveDirs["Up"] := false
-    ActiveDirs["Down"] := false
-    MouseTimerOn := false
-    SetTimer(PerformMouseStep, 0)
-    MouseCurSpeed := MouseBaseSpeed
-}
-
-MoveKeyDown(dir) {
-    global ActiveDirs, MouseTimerOn, CurrentModeState
-    if (CurrentModeState != 2)
-        return
-    
-    if (!ActiveDirs[dir]) {
-        ActiveDirs[dir] := true
-        PerformMouseStep()
-        if (!MouseTimerOn) {
-            MouseTimerOn := true
-            SetTimer(PerformMouseStep, 16)
-        }
-    }
-}
-
-MoveKeyUp(dir) {
-    global ActiveDirs, MouseTimerOn, MouseCurSpeed, MouseBaseSpeed
-    ActiveDirs[dir] := false
-    
-    hasActive := (ActiveDirs["Left"] || ActiveDirs["Right"] || ActiveDirs["Up"] || ActiveDirs["Down"])
-    if (!hasActive) {
-        MouseTimerOn := false
-        SetTimer(PerformMouseStep, 0)
-        MouseCurSpeed := MouseBaseSpeed
-    }
-}
-
-PerformMouseStep() {
-    global ActiveDirs, MouseCurSpeed, MouseBaseSpeed, MouseTopSpeed, MouseAccelFactor, CurrentModeState
-    if (CurrentModeState != 2) {
-        ResetMouseDirs()
+ProcessMouseMovement() {
+    global VimMode, MouseCurSpeed, MouseBaseSpeed, MouseTopSpeed, MouseAccelFactor
+    if (!VimMode) {
+        SetTimer(ProcessMouseMovement, 0)
         return
     }
     
     dx := 0, dy := 0
-    if (ActiveDirs["Left"])  dx -= 1
-    if (ActiveDirs["Right"]) dx += 1
-    if (ActiveDirs["Up"])    dy -= 1
-    if (ActiveDirs["Down"])  dy += 1
+    ; حركة الماوس عبر WASD والأسهم
+    if (GetKeyState("a", "P") || GetKeyState("Left", "P"))
+        dx -= 1
+    if (GetKeyState("d", "P") || GetKeyState("Right", "P"))
+        dx += 1
+    if (GetKeyState("w", "P") || GetKeyState("Up", "P"))
+        dy -= 1
+    if (GetKeyState("s", "P") || GetKeyState("Down", "P"))
+        dy += 1
     
-    if (dx == 0 && dy == 0)
+    if (dx == 0 && dy == 0) {
+        MouseCurSpeed := MouseBaseSpeed
         return
+    }
     
-    multiplier := (dx != 0 && dy != 0) ? 0.7071 : 1.0
-    speed := MouseCurSpeed * multiplier
+    mult := (dx != 0 && dy != 0) ? 0.7071 : 1.0
+    speed := MouseCurSpeed * mult
     
     ; وضع الدقة (Shift) ووضع التوربو (Ctrl)
     if (GetKeyState("Shift", "P"))
@@ -231,15 +166,17 @@ PerformMouseStep() {
     
     moveX := Integer(dx * speed)
     moveY := Integer(dy * speed)
-    
     if (dx != 0 && moveX == 0) moveX := dx
     if (dy != 0 && moveY == 0) moveY := dy
     
-    ; تحريك المؤشر الفوري بنظامين متكاملين لضمان الاستجابة 100%
-    MouseMove(moveX, moveY, 0, "R")
-    DllCall("mouse_event", "UInt", 1, "Int", moveX, "Int", moveY, "UInt", 0, "UPtr", 0)
+    ; تحديث إحداثيات مؤشر الفأرة مباشرة عبر Win32 API
+    pt := Buffer(8, 0)
+    DllCall("GetCursorPos", "Ptr", pt.Ptr)
+    curX := NumGet(pt, 0, "Int")
+    curY := NumGet(pt, 4, "Int")
+    DllCall("SetCursorPos", "Int", curX + moveX, "Int", curY + moveY)
     
-    ; تسارع مستمر ناعم وفائق السرعة
+    ; تسارع فيزيائي سلس
     if (MouseCurSpeed < MouseTopSpeed)
         MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccelFactor)
 }
@@ -268,8 +205,8 @@ GetScrollDelta(spd) {
 }
 
 DoAutoScroll() {
-    global AutoScrollState, CurrentModeState, ScrollSpeed, ScrollAccum
-    if (CurrentModeState != 1 || AutoScrollState == 0) {
+    global AutoScrollState, VimMode, ScrollSpeed, ScrollAccum
+    if (!VimMode || AutoScrollState == 0) {
         StopAutoScroll()
         return
     }
@@ -365,14 +302,15 @@ ClearGrid() {
 }
 
 StartGridMode() {
-    global GridGuis, GridActive, CurrentModeState
-    if (CurrentModeState == 0)
+    global GridGuis, GridActive, VimMode
+    if (!VimMode)
         return
     
     StopAutoScroll()
     ClearHints()
     ClearGrid()
     
+    CoordMode("Mouse", "Screen")
     activeHwnd := WinExist("A")
     if (!activeHwnd)
         activeHwnd := WinGetID("Program Manager")
@@ -424,7 +362,7 @@ ProcessGridChoice(char, hook, gridCenters) {
         choice := Integer(char)
         if (gridCenters.Has(choice)) {
             pt := gridCenters[choice]
-            MouseMove(pt.x, pt.y, 0)
+            DllCall("SetCursorPos", "Int", pt.x, "Int", pt.y)
         }
     }
     hook.Stop()
@@ -470,8 +408,8 @@ ClearHints() {
 }
 
 StartHintMode(clickType := "Left") {
-    global HintGuis, HintMap, CurrentModeState
-    if (CurrentModeState == 0)
+    global HintGuis, HintMap, VimMode
+    if (!VimMode)
         return
     
     StopAutoScroll()
@@ -557,10 +495,11 @@ CheckHintMatch(typed, hook, clickType) {
         hook.Stop()
         ClearHints()
         
+        DllCall("SetCursorPos", "Int", el.centerX, "Int", el.centerY)
         if (clickType == "Right")
-            Click(el.centerX, el.centerY, "Right")
+            Click("Right")
         else
-            Click(el.centerX, el.centerY, "Left")
+            Click("Left")
         ShowMode()
     } else {
         hasPrefix := false
@@ -579,113 +518,11 @@ CheckHintMatch(typed, hook, clickType) {
 }
 
 ; =============================================================================
-;  الطبقة 1: وضع الماوس الخارق المباشر (State 2: MOUSE MODE 🔵)
+;  الطبقة الموحدة: وضع الملاحة والماوس الشامل (🟢 NORMAL MODE)
 ; =============================================================================
-#HotIf CurrentModeState == 2
+#HotIf VimMode
 
-Escape:: SetModeState(0)
-
-; تحريك لليسار (Left)
-*h::
-*Left::
-*a::
-*u:: MoveKeyDown("Left")
-
-*h Up::
-*Left Up::
-*a Up::
-*u Up:: MoveKeyUp("Left")
-
-; تحريك لليمين (Right)
-*l::
-*Right::
-*d::
-*p:: MoveKeyDown("Right")
-
-*l Up::
-*Right Up::
-*d Up::
-*p Up:: MoveKeyUp("Right")
-
-; تحريك لأعلى (Up)
-*k::
-*Up::
-*w::
-*i:: MoveKeyDown("Up")
-
-*k Up::
-*Up Up::
-*w Up::
-*i Up:: MoveKeyUp("Up")
-
-; تحريك لأسفل (Down)
-*j::
-*Down::
-*s::
-*o:: MoveKeyDown("Down")
-
-*j Up::
-*Down Up::
-*s Up::
-*o Up:: MoveKeyUp("Down")
-
-; النقر في وضع الماوس
-*Space::  Click()                       ; Space = نقر أيسر
-*Enter::  Click()                       ; Enter = نقر أيسر
-*m::      Click()                       ; m = نقر أيسر
-*+Space:: Click("Right")                ; Shift+Space = نقر أيمن
-*+Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
-*r::      Click("Right")                ; r = نقر أيمن
-*^Space:: Click("Middle")               ; Ctrl+Space = نقر أوسط
-
-; وضع السحب والإفلات (Drag Mode)
-*v:: ToggleMouseDrag()
-
-; شبكة القفز في وضع الماوس
-*g:: StartGridMode()
-
-; منع أي زر غير مستخدم من الكتابة في وضع الماوس (Modal Lockout)
-b::
-c::
-e::
-f::
-n::
-q::
-t::
-x::
-y::
-z::
-1::
-2::
-3::
-4::
-5::
-6::
-7::
-8::
-9::
-0::
-Tab::
-Backspace::
-Delete::
-,::
-.::
-/::
-;::
-'::
-[::
-]::
-\::
--::
-=:: {
-    return
-}
-
-; =============================================================================
-;  الطبقة 2: وضع الملاحة العام (State 1: NORMAL MODE 🟢)
-; =============================================================================
-#HotIf CurrentModeState == 1
-
+; خروج فوري إلى وضع الكتابة (INSERT MODE)
 Escape:: {
     global AutoScrollState, GridActive
     if (AutoScrollState != 0)
@@ -694,18 +531,46 @@ Escape:: {
         ClearGrid()
     else {
         ClearHints()
-        SetModeState(0)
+        SetVimState(false)
     }
 }
+i:: SetVimState(false)
 
-; ----- اختصارات Vimium الأصلية المحفوظة بالكامل (Navigation Keys) -----
+; -----------------------------------------------------------------------------
+;  1. تحكم الماوس فائق السرعة عبر WASD والأسهم
+; -----------------------------------------------------------------------------
+w::
+a::
+s::
+d::
+Up::
+Down::
+Left::
+Right:: {
+    ; يتم تحريك المؤشر بسلاسة فائقة عبر حلقة ProcessMouseMovement (16ms)
+}
+
+; نقرات الماوس
+*Space::  Click()                       ; Space = نقر أيسر
+*Enter::  Click()                       ; Enter = نقر أيسر
+*+Space:: Click("Right")                ; Shift+Space = نقر أيمن
+*+Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
+*e::      Click("Middle")               ; e = نقر أوسط (فتح الروابط في تبويب جديد)
+*^Space:: Click("Middle")               ; Ctrl+Space = نقر أوسط
+
+; وضع السحب والإفلات (Drag Mode)
+*v:: ToggleMouseDrag()
+
+; -----------------------------------------------------------------------------
+;  2. اختصارات التمرير والملاحة بنمط Vimium الأصلي (HJKL)
+; -----------------------------------------------------------------------------
 j:: {
     StopAutoScroll()
-    SendInput("{WheelDown 2}")         ; j = تمرير للأسفل
+    SendInput("{WheelDown 2}")         ; j = تمرير لأسفل
 }
 k:: {
     StopAutoScroll()
-    SendInput("{WheelUp 2}")           ; k = تمرير للأعلى
+    SendInput("{WheelUp 2}")           ; k = تمرير لأعلى
 }
 h:: {
     StopAutoScroll()
@@ -713,19 +578,21 @@ h:: {
 }
 l:: {
     StopAutoScroll()
-    SendInput("{Right 2}")             ; l = تنقل لليمين
+    SendInput("{Right 2}")             ; l = تنقل لليمين بأمان
 }
 
-d:: {
-    StopAutoScroll()
-    SendInput("{WheelDown 8}")         ; d = نصف صفحة أسفل
-}
 u:: {
     StopAutoScroll()
-    SendInput("{WheelUp 8}")           ; u = نصف صفحة أعلى
+    SendInput("{WheelUp 8}")           ; u = نصف صفحة لأعلى
+}
++d:: {
+    StopAutoScroll()
+    SendInput("{WheelDown 8}")         ; Shift+d = نصف صفحة لأسفل
 }
 
-; ----- شبكة القفز السريع وقمة الصفحة (Grid & Top Page) -----
+; -----------------------------------------------------------------------------
+;  3. شبكة القفز وقمة الصفحة (Grid Jump & Page Navigation)
+; -----------------------------------------------------------------------------
 g:: {
     global gLastPress
     now := A_TickCount
@@ -742,25 +609,65 @@ g:: {
     SendInput("^{End}")                ; G = أسفل الصفحة
 }
 
-; ----- التمرير التلقائي (Auto-Scroll) -----
+; -----------------------------------------------------------------------------
+;  4. التمرير التلقائي الانسيابي (~60 Hz Auto-Scroll)
+; -----------------------------------------------------------------------------
 PgDn:: StartAutoScroll(1)              ; PageDown = تمرير تلقائي لأسفل
 PgUp:: StartAutoScroll(-1)             ; PageUp = تمرير تلقائي لأعلى
 ^j:: StartAutoScroll(1)                ; Ctrl+j = تمرير تلقائي لأسفل
 ^k:: StartAutoScroll(-1)               ; Ctrl+k = تمرير تلقائي لأعلى
 
-Space:: {
-    global AutoScrollState
-    if (AutoScrollState != 0)
-        StopAutoScroll()
-    else
-        StartAutoScroll(1)             ; Space = تشغيل / إيقاف التمرير لأسفل
-}
-
-; ----- وضع التلميحات التفاعلي (Hint Mode) -----
+; -----------------------------------------------------------------------------
+;  5. وضع التلميحات التفاعلي (UI Hint Mode)
+; -----------------------------------------------------------------------------
 f:: StartHintMode("Left")              ; f = إظهار تلميحات العناصر والنقر عليها
 +f:: StartHintMode("Right")            ; F = إظهار التلميحات والنقر بزر الماوس الأيمن
 
-; ----- التنقل بين أقسام التطبيق والتحكم بالسرعة -----
+; -----------------------------------------------------------------------------
+;  6. إدارة التبويبات والتاريخ والنوافذ
+; -----------------------------------------------------------------------------
+t::  SendInput("^t")                   ; t = تبويب جديد
+x::  SendInput("^w")                   ; x = إغلاق تبويب
++x:: SendInput("^+t")                  ; X = استعادة تبويب
++j:: SendInput("^+{Tab}")              ; Shift+j = تبويب سابق
++k:: SendInput("^{Tab}")               ; Shift+k = تبويب تالي
++w:: SendInput("^n")                   ; Shift+w = نافذة جديدة
++h:: SendInput("!{Left}")              ; Shift+h = رجوع في التاريخ
++l:: SendInput("!{Right}")             ; Shift+l = تقدم في التاريخ
+
+; -----------------------------------------------------------------------------
+;  7. البحث والتحديث
+; -----------------------------------------------------------------------------
+r::  Click("Right")                    ; r = نقر أيمن (أو Shift+r لإعادة التحميل)
++r:: SendInput("{F5}")                 ; Shift+r = إعادة تحميل الصفحة (Reload)
+/:: {
+    SetVimState(false)
+    SendInput("^f")                    ; / = بحث في التطبيق
+}
++s:: SendInput("^f")                   ; Shift+s = بحث داخل التطبيق (In-App Search)
+n::  SendInput("{F3}")                 ; n = نتيجة تالية
++n:: SendInput("+{F3}")                ; N = نتيجة سابقة
+
+; -----------------------------------------------------------------------------
+;  8. نسخ ولصق
+; -----------------------------------------------------------------------------
+y:: {
+    global yLastPress
+    now := A_TickCount
+    if (now - yLastPress < 500)
+        SendInput("^c")                ; yy = نسخ
+    yLastPress := now
+}
+p::  SendInput("^v")                   ; p = لصق
+
+; -----------------------------------------------------------------------------
+;  9. شريط العنوان والتنقل بين الأقسام
+; -----------------------------------------------------------------------------
++o:: {
+    SetVimState(false)
+    SendInput("^l")
+}
+
 ]::{
     global AutoScrollState
     if (AutoScrollState != 0)
@@ -783,74 +690,33 @@ f:: StartHintMode("Left")              ; f = إظهار تلميحات العن�
         SendInput("{F6}")              ; . = القسم التالي
 }
 
-; ----- تاريخ التصفح (Vimium: H L) -----
-+h:: SendInput("!{Left}")              ; H = رجوع في التاريخ
-+l:: SendInput("!{Right}")             ; L = تقدم في التاريخ
-
-; ----- التبويبات (Vimium: t x X J K W) -----
-t::  SendInput("^t")                   ; t = تبويب جديد
-x::  SendInput("^w")                   ; x = إغلاق تبويب
-+x:: SendInput("^+t")                  ; X = استعادة تبويب
-+j:: SendInput("^+{Tab}")              ; J = تبويب سابق
-+k:: SendInput("^{Tab}")               ; K = تبويب تالي
-+w:: SendInput("^n")                   ; W = نافذة جديدة
-
-; ----- التحديث والبحث في النظام والتطبيقات -----
-r::  SendInput("{F5}")                 ; r = Reload
-/:: {
-    SetModeState(0)
-    SendInput("^f")                    ; / = بحث في التطبيق
-}
-s::  SendInput("#s")                   ; s = بحث ويندوز الشامل (Windows Search)
-+s:: SendInput("^f")                   ; S = بحث داخل التطبيق (In-App Search)
-n::  SendInput("{F3}")                 ; n = نتيجة تالية
-+n:: SendInput("+{F3}")                ; N = نتيجة سابقة
-
-; ----- نسخ ولصق -----
-y:: {
-    global yLastPress
-    now := A_TickCount
-    if (now - yLastPress < 500)
-        SendInput("^c")                ; yy = نسخ
-    yLastPress := now
-}
-p::  SendInput("^v")                   ; p = لصق
-
-; ----- Vomnibar (شريط العنوان والروابط) -----
-+o:: {
-    SetModeState(0)
-    SendInput("^l")
-}
-
-; ----- التحكم بسرعة التمرير (+ / = / Numpad+ / - / Numpad-) -----
+; -----------------------------------------------------------------------------
+;  10. التحكم بالسرعة والصوت
+; -----------------------------------------------------------------------------
 =::
 +=::
-NumpadAdd:: ChangeScrollSpeed(1)       ; + أو = أو Numpad+ = تسريع السكرول
+NumpadAdd:: ChangeScrollSpeed(1)       ; + أو = = تسريع السكرول
 
 -::
 +-::
-NumpadSub:: ChangeScrollSpeed(-1)      ; - أو Numpad- = تبطيء السكرول
+NumpadSub:: ChangeScrollSpeed(-1)      ; - = تبطيء السكرول
 
-^0:: SendInput("^0")                   ; Ctrl+0 = إعادة الضبط
+^0:: SendInput("^0")                   ; Ctrl+0 = إعادة ضبط التكبير
 
-; ----- الصوت والميديا -----
 ^,::   SendInput("{Media_Prev}")
 ^.::   SendInput("{Media_Next}")
 ^Up::  SendInput("{Volume_Up}")
 ^Down:: SendInput("{Volume_Down}")
 !0::   SendInput("{Volume_Mute}")
 
-; ----- منع الأزرار غير المخصصة من الكتابة في Normal Mode -----
-a::
+; -----------------------------------------------------------------------------
+;  منع الحروف غير المخصصة من الكتابة في Normal Mode (Modal Lockout)
+; -----------------------------------------------------------------------------
 b::
 c::
-e::
-i::
 m::
 o::
 q::
-v::
-w::
 z::
 1::
 2::
@@ -871,36 +737,36 @@ Delete::
     return
 }
 
-; ----- مساعدة -----
+; مساعدة
 +/:: {
     help := "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
-          . "🟢 VimWindows - الاختصارات المتكاملة`n"
+          . "🟢 VimWindows - المنظومة الشاملة الموحدة`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "CapsLock: تبديل فوري للغة الإدخال (عربي ↔ إنجليزي)`n"
           . "Shift+CapsLock: تفعيل / تعطيل الحروف الكبيرة`n`n"
-          . "Home Key: التبديل الدوري بين 3 أوضاع:`n"
-          . "  ضغطة 1 → 🟢 NORMAL MODE`n"
-          . "  ضغطة 2 → 🔵 MOUSE MODE (ماوس فوري خارق)`n"
-          . "  ضغطة 3 → ⚫ INSERT MODE (كتابة عادية)`n"
-          . "Esc     → الخروج الفوري لوضع الكتابة`n`n"
-          . "🖱️ تحكم الماوس في MOUSE MODE:`n"
-          . "  HJKL / الأسهم / WASD / UIOP → تحريك فوري بضغطة زر واحدة`n"
-          . "  Space / Enter / m → نقر أيسر | Shift+Space / r نقر أيمن`n"
+          . "Home Key: تفعيل / إيقاف NORMAL MODE بنقرة واحدة`n"
+          . "Esc / i: الخروج الفوري لوضع الكتابة العادي`n`n"
+          . "🖱️ تحكم الماوس المباشر (WASD):`n"
+          . "  W / A / S / D  → أعلى / يسار / أسفل / يمين`n"
+          . "  Space / Enter  → نقر أيسر`n"
+          . "  Shift+Space / r→ نقر أيمن`n"
+          . "  e / Ctrl+Space → نقر أوسط`n"
           . "  v              → وضع السحب والإفلات`n"
-          . "  g              → شبكة القفز 3x3`n"
+          . "  g              → شبكة القفز 3x3 (أو gg لأعلى الصفحة)`n"
           . "  Shift (أثناء الحركة) → دقة بالبكسل`n"
           . "  Ctrl (أثناء الحركة)  → توربو فائق`n`n"
-          . "📜 التمرير والملاحة في NORMAL MODE:`n"
+          . "📜 التمرير والملاحة بنمط Vimium (HJKL):`n"
           . "  j / k          → تمرير لأسفل / لأعلى`n"
           . "  h / l          → تنقل لليسار / لليمين`n"
-          . "  d / u          → نصف صفحة لأسفل / لأعلى`n"
+          . "  Shift+d / u    → نصف صفحة لأسفل / لأعلى`n"
           . "  gg / G         → أعلى / أسفل الصفحة`n"
           . "  f / F          → تلميحات العناصر (Hint Mode)`n"
-          . "  PgDn / Space   → تمرير تلقائي لأسفل`n`n"
-          . "📑 التبويبات والبحث:`n"
+          . "  PgDn / PgUp    → تمرير تلقائي مستمر`n`n"
+          . "📑 التبويبات والبحث والحافظة:`n"
           . "  t / x / X      → تبويب جديد / إغلاق / استعادة`n"
-          . "  J / K          → التبويب السابق / التالي`n"
-          . "  s / S          → بحث ويندوز / بحث التطبيق`n"
+          . "  Shift+j / Shift+k → التبويب السابق / التالي`n"
+          . "  yy / p         → نسخ / لصق`n"
+          . "  / / Shift+s    → بحث داخل التطبيق`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     MsgBox(help, "VimWindows", 0)
 }
