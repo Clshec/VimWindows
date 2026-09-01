@@ -1,6 +1,6 @@
 ﻿# 📖 Complete Shortcuts Reference Guide - VimWindows
 
-Welcome to the comprehensive shortcuts reference and user guide for **VimWindows**. This tool brings full modal keyboard navigation, native WASD mouse physics, UI hint tagging, smooth micro-scrolling, and single-tap **`CapsLock`** language switching to Windows in a single, unified mode.
+Welcome to the comprehensive shortcuts reference and user guide for **VimWindows**. This tool brings full modal keyboard navigation, symmetric dual-hand (WASD & PL;') mouse physics, UI hint tagging, smooth micro-scrolling, and single-tap **`CapsLock`** language switching to Windows.
 
 ---
 
@@ -26,7 +26,7 @@ Press **`Home`** (or `NumpadHome` or `Ctrl + Win`) to toggle between Normal Mode
                                     ▼
                ┌─────────────────────────────────────────┐
                │       🟢 UNIFIED NORMAL MODE            │
-               │ (WASD Mouse + HJKL Scroll + Hints f)    │
+               │ (Symmetric Dual-Hand Mouse + HJK Scroll)│
                └────────────────────┬────────────────────┘
                                     │ Press Esc, i or Home
                                     ▼
@@ -37,32 +37,44 @@ Press **`Home`** (or `NumpadHome` or `Ctrl + Win`) to toggle between Normal Mode
 
 ---
 
-## 🖱️ 1. Native WASD Mouse Control (in NORMAL MODE)
+## 🖐️ 1. Symmetric Dual-Hand Mouse Control (in NORMAL MODE)
 
+Control the mouse cursor effortlessly with either hand:
+
+### 🖐️ Left Hand (WASD + ZXC):
 | Key | Action | Description |
 | :--- | :--- | :--- |
-| **`W`** / **`Up`** | ⬆️ **Move Up** | Ultra-responsive continuous physics movement upward. |
-| **`A`** / **`Left`** | ⬅️ **Move Left** | Move pointer left. |
-| **`S`** / **`Down`** | ⬇️ **Move Down** | Move pointer down. |
-| **`D`** / **`Right`** | ➡️ **Move Right** | Move pointer right. |
-| **`Shift` (Held)** | 🐌 **Pixel Precision** | Slows pointer down to 1px precision for delicate clicks. |
-| **`Ctrl` (Held)** | ⚡ **Hyper Turbo** | Multiplies speed (2.5x) for multi-monitor jumps. |
-| **`Space`** or **`Enter`** | 👈 **Left Click** | Standard left click at cursor position. |
-| **`Shift + Space`** or **`r`** | 👉 **Right Click** | Context menu right click. |
-| **`e`** or **`Ctrl + Space`** | 🔘 **Middle Click** | Open link in new tab. |
+| **`W / A / S / D`** | 🖱️ **Mouse Move** | Up / Left / Down / Right smooth physical movement. |
+| **`Z`** | 👈 **Left Click** | Left click with left hand. |
+| **`X`** | 🔘 **Middle Click / Wheel** | Middle click / open in new tab. |
+| **`C`** | 👉 **Right Click** | Context menu right click. |
+
+### 🖐️ Right Hand (PL;' + ,./ beside Enter):
+| Key | Action | Description |
+| :--- | :--- | :--- |
+| **`P / L / ; / '`** or **Arrows** | 🖱️ **Mouse Move** | Up / Left / Down / Right directly next to Enter key. |
+| **`,`** | 👈 **Left Click** | Left click with right hand. |
+| **`.`** | 🔘 **Middle Click / Wheel** | Middle click with right hand. |
+| **`/`** | 👉 **Right Click** | Right click with right hand. |
+
+### ⚡ Speed Controls & Actions:
+| Key | Action | Description |
+| :--- | :--- | :--- |
+| **Dual Keys** (e.g. `W+D` / `P+'`) | 🚀 **Turbo Jump (50px)** | Fast, controllable diagonal screen traversal. |
+| **`Shift` (Held)** | 🐌 **Pixel Precision (1.5px)**| Slows pointer down for delicate clicks. |
+| **`Ctrl` (Held)** | ⚡ **Hyper Turbo** | Multiplies speed for multi-monitor jumps. |
 | **`v`** | ✊ **Drag & Drop Mode** | Toggles left mouse button hold for selection / dragging. |
 | **`g`** | 🔢 **3x3 Grid Jump** | Displays 3x3 quadrant grid for instant teleporting (or `gg` for document top). |
 
 ---
 
-## 🧭 2. Vimium Navigation (HJKL)
+## 🧭 2. Vimium Navigation (HJK)
 
 | Key | Action | Description |
 | :--- | :--- | :--- |
 | **`j`** | ⬇️ Scroll Down | Discrete 2-step downward scroll. |
 | **`k`** | ⬆️ Scroll Up | Discrete 2-step upward scroll. |
 | **`h`** | ⬅️ Move Left | 2-step left movement safely. |
-| **`l`** | ➡️ Move Right | 2-step right movement safely. |
 | **`Shift + d`** | ⏬ Half Page Down | Fast half-screen downward jump. |
 | **`u`** | ⏫ Half Page Up | Fast half-screen upward jump. |
 | **`gg`** | 🔝 Top of Page | Instant jump to document top (`Ctrl + Home`). |
@@ -85,8 +97,8 @@ Press **`Home`** (or `NumpadHome` or `Ctrl + Win`) to toggle between Normal Mode
 | :--- | :--- | :--- |
 | **`PgDn`** / **`Ctrl + j`** | ⏬ **Auto-Scroll Down** | Continuous micro-scroll downward (~60 Hz). |
 | **`PgUp`** / **`Ctrl + k`** | ⏫ **Auto-Scroll Up** | Continuous micro-scroll upward. |
-| **`+`** / **`=`** / **`Numpad +`** | ⚡ **Increase Speed** | Accelerates auto-scroll (Levels 1 to 10). |
-| **`-`** / **`Numpad -`** | 🐌 **Decrease Speed** | Decelerates auto-scroll. |
+| **`+`** / **`=`** | ⚡ **Increase Speed** | Accelerates auto-scroll (Levels 1 to 10). |
+| **`-`** | 🐌 **Decrease Speed** | Decelerates auto-scroll. |
 
 ---
 
@@ -95,8 +107,7 @@ Press **`Home`** (or `NumpadHome` or `Ctrl + Win`) to toggle between Normal Mode
 | Key | Action | Description |
 | :--- | :--- | :--- |
 | **`t`** | 📑 **New Tab** | Opens a new tab (`Ctrl + T`). |
-| **`x`** | ❌ **Close Tab** | Closes current tab (`Ctrl + W`). |
-| **`X`** (`Shift + x`) | 🔄 **Restore Tab** | Reopens last closed tab (`Ctrl + Shift + T`). |
+| **`Shift + x`** | 🔄 **Restore Tab** | Reopens last closed tab (`Ctrl + Shift + T`). |
 | **`Shift + j`** | ⬅️ **Previous Tab** | Switches to previous tab (`Ctrl + Shift + Tab`). |
 | **`Shift + k`** | ➡️ **Next Tab** | Switches to next tab (`Ctrl + Tab`). |
 | **`Shift + w`** | 🪟 **New Window** | Opens a new application window (`Ctrl + N`). |
@@ -106,4 +117,4 @@ Press **`Home`** (or `NumpadHome` or `Ctrl + Win`) to toggle between Normal Mode
 | **`/`** | 🔍 **Search & Type** | Focuses search bar and enters insert mode (`Ctrl + F`). |
 | **`Shift + s`** | 🔎 **In-App Search** | Opens application search (`Ctrl + F`). |
 | **`yy`** | 📋 **Copy** | Copy selected text (`Ctrl + C`). |
-| **`p`** | 📥 **Paste** | Paste from clipboard (`Ctrl + V`). |
+| **`Shift + p`** | 📥 **Paste** | Paste from clipboard (`Ctrl + V`). |

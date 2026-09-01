@@ -7,7 +7,7 @@ CoordMode("Mouse", "Screen")
 SetCapsLockState("AlwaysOff")
 
 ; =============================================================================
-;  VimWindows - Balanced Responsive Single-Mode & WASD Mouse Engine
+;  VimWindows - Symmetric Dual-Hand (WASD / PL;') Hyper Mouse & Navigation
 ;  Home / NumpadHome / Ctrl+Win = Toggle NORMAL MODE ↔ INSERT MODE
 ;  CapsLock = تبديل فوري للغة الإدخال (عربي ↔ إنجليزي) بنمط Mac & Pro
 ; =============================================================================
@@ -480,24 +480,26 @@ Escape:: {
 i:: SetVimState(false)
 
 ; -----------------------------------------------------------------------------
-;  1. تحكم الماوس المباشر اللحظي المتوازن (WASD + الأسهم)
+;  1. تحكم الماوس المتطابق ثنائي اليدين (WASD يسار / PL;' يمين + الأسهم)
 ; -----------------------------------------------------------------------------
 
-; حركة لليسار (A / Left / ش)
+; حركة لليسار (A يسار / L يمين / Left / ش / م)
 *a::
-*Left::
-*sc01E:: {
+*sc01E::
+*l::
+*sc026::
+*Left:: {
     accel := 1.0
-    MouseMove(-12, 0, 0, "R")
-    while (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("vk41", "P") || GetKeyState("a", "P")) {
+    MouseMove(-10, 0, 0, "R")
+    while (GetKeyState("sc01E", "P") || GetKeyState("sc026", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P") || GetKeyState("l", "P")) {
         dy := 0
-        if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("vk57", "P") || GetKeyState("w", "P"))
+        if (GetKeyState("sc011", "P") || GetKeyState("sc019", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P") || GetKeyState("p", "P"))
             dy -= 1
-        if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("vk53", "P") || GetKeyState("s", "P"))
+        if (GetKeyState("sc01F", "P") || GetKeyState("sc027", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P"))
             dy += 1
         
         isDual := (dy != 0)
-        baseSpd := isDual ? 65.0 : (14.0 * accel)
+        baseSpd := isDual ? 50.0 : (11.0 * accel)
         
         if GetKeyState("Shift", "P")
             baseSpd := 1.5
@@ -514,21 +516,22 @@ i:: SetVimState(false)
     }
 }
 
-; حركة لليمين (D / Right / ي)
+; حركة لليمين (D يسار / ' يمين / Right / ي / ط)
 *d::
-*Right::
-*sc020:: {
+*sc020::
+*sc028::
+*Right:: {
     accel := 1.0
-    MouseMove(12, 0, 0, "R")
-    while (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("vk44", "P") || GetKeyState("d", "P")) {
+    MouseMove(10, 0, 0, "R")
+    while (GetKeyState("sc020", "P") || GetKeyState("sc028", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P")) {
         dy := 0
-        if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("vk57", "P") || GetKeyState("w", "P"))
+        if (GetKeyState("sc011", "P") || GetKeyState("sc019", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P") || GetKeyState("p", "P"))
             dy -= 1
-        if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("vk53", "P") || GetKeyState("s", "P"))
+        if (GetKeyState("sc01F", "P") || GetKeyState("sc027", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P"))
             dy += 1
         
         isDual := (dy != 0)
-        baseSpd := isDual ? 65.0 : (14.0 * accel)
+        baseSpd := isDual ? 50.0 : (11.0 * accel)
         
         if GetKeyState("Shift", "P")
             baseSpd := 1.5
@@ -545,21 +548,23 @@ i:: SetVimState(false)
     }
 }
 
-; حركة للأعلى (W / Up / ص)
+; حركة للأعلى (W يسار / P يمين / Up / ص / ح)
 *w::
-*Up::
-*sc011:: {
+*sc011::
+*p::
+*sc019::
+*Up:: {
     accel := 1.0
-    MouseMove(0, -12, 0, "R")
-    while (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("vk57", "P") || GetKeyState("w", "P")) {
+    MouseMove(0, -10, 0, "R")
+    while (GetKeyState("sc011", "P") || GetKeyState("sc019", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P") || GetKeyState("p", "P")) {
         dx := 0
-        if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("vk41", "P") || GetKeyState("a", "P"))
+        if (GetKeyState("sc01E", "P") || GetKeyState("sc026", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P") || GetKeyState("l", "P"))
             dx -= 1
-        if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("vk44", "P") || GetKeyState("d", "P"))
+        if (GetKeyState("sc020", "P") || GetKeyState("sc028", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P"))
             dx += 1
         
         isDual := (dx != 0)
-        baseSpd := isDual ? 65.0 : (14.0 * accel)
+        baseSpd := isDual ? 50.0 : (11.0 * accel)
         
         if GetKeyState("Shift", "P")
             baseSpd := 1.5
@@ -576,21 +581,22 @@ i:: SetVimState(false)
     }
 }
 
-; حركة للأسفل (S / Down / س)
+; حركة للأسفل (S يسار / ; يمين / Down / س / ك)
 *s::
-*Down::
-*sc01F:: {
+*sc01F::
+*sc027::
+*Down:: {
     accel := 1.0
-    MouseMove(0, 12, 0, "R")
-    while (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("vk53", "P") || GetKeyState("s", "P")) {
+    MouseMove(0, 10, 0, "R")
+    while (GetKeyState("sc01F", "P") || GetKeyState("sc027", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P")) {
         dx := 0
-        if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("vk41", "P") || GetKeyState("a", "P"))
+        if (GetKeyState("sc01E", "P") || GetKeyState("sc026", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P") || GetKeyState("l", "P"))
             dx -= 1
-        if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("vk44", "P") || GetKeyState("d", "P"))
+        if (GetKeyState("sc020", "P") || GetKeyState("sc028", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P"))
             dx += 1
         
         isDual := (dx != 0)
-        baseSpd := isDual ? 65.0 : (14.0 * accel)
+        baseSpd := isDual ? 50.0 : (11.0 * accel)
         
         if GetKeyState("Shift", "P")
             baseSpd := 1.5
@@ -607,19 +613,38 @@ i:: SetVimState(false)
     }
 }
 
-; نقرات الماوس
-*Space::  Click()                       ; Space = نقر أيسر
-*Enter::  Click()                       ; Enter = نقر أيسر
-*+Space:: Click("Right")                ; Shift+Space = نقر أيمن
-*+Enter:: Click("Right")                ; Shift+Enter = نقر أيمن
-*e::      Click("Middle")               ; e = نقر أوسط (فتح الروابط في تبويب جديد)
-*^Space:: Click("Middle")               ; Ctrl+Space = نقر أوسط
+; -----------------------------------------------------------------------------
+;  نقرات الماوس المتطابقة (اليد اليسرى ZXC / اليد اليمنى ,./ + Space & Enter)
+; -----------------------------------------------------------------------------
+
+; نقر أيسر (Z في اليسار / , في اليمين بجوار Enter / Space / Enter)
+*z::
+*sc02C::
+*,::
+*sc033::
+*Space::
+*Enter:: Click("Left")
+
+; نقر أوسط / بكرة (X في اليسار / . في اليمين / e)
+*x::
+*sc02D::
+*.::
+*sc034::
+*e::
+*^Space:: Click("Middle")
+
+; نقر أيمن (C في اليسار / / في اليمين / r)
+*c::
+*sc02E::
+*sc035::
+*r::
+*+Space:: Click("Right")
 
 ; وضع السحب والإفلات (Drag Mode)
 *v:: ToggleMouseDrag()
 
 ; -----------------------------------------------------------------------------
-;  2. اختصارات التمرير والملاحة بنمط Vimium الأصلي (HJKL)
+;  2. اختصارات التمرير والملاحة بنمط Vimium الأصلي (HJK)
 ; -----------------------------------------------------------------------------
 j::
 sc024:: {
@@ -635,11 +660,6 @@ h::
 sc023:: {
     StopAutoScroll()
     SendInput("{Left 2}")              ; h = تنقل لليسار
-}
-l::
-sc026:: {
-    StopAutoScroll()
-    SendInput("{Right 2}")             ; l = تنقل لليمين بأمان
 }
 
 u:: {
@@ -688,8 +708,7 @@ f:: StartHintMode("Left")              ; f = إظهار تلميحات العن�
 ;  6. إدارة التبويبات والتاريخ والنوافذ
 ; -----------------------------------------------------------------------------
 t::  SendInput("^t")                   ; t = تبويب جديد
-x::  SendInput("^w")                   ; x = إغلاق تبويب
-+x:: SendInput("^+t")                  ; X = استعادة تبويب
++x:: SendInput("^+t")                  ; Shift+x = استعادة تبويب
 +j:: SendInput("^+{Tab}")              ; Shift+j = تبويب سابق
 +k:: SendInput("^{Tab}")               ; Shift+k = تبويب تالي
 +w:: SendInput("^n")                   ; Shift+w = نافذة جديدة
@@ -699,7 +718,6 @@ x::  SendInput("^w")                   ; x = إغلاق تبويب
 ; -----------------------------------------------------------------------------
 ;  7. البحث والتحديث
 ; -----------------------------------------------------------------------------
-r::  Click("Right")                    ; r = نقر أيمن
 +r:: SendInput("{F5}")                 ; Shift+r = إعادة تحميل الصفحة (Reload)
 /:: {
     SetVimState(false)
@@ -719,7 +737,7 @@ y:: {
         SendInput("^c")                ; yy = نسخ
     yLastPress := now
 }
-p::  SendInput("^v")                   ; p = لصق
++p:: SendInput("^v")                   ; Shift+p = لصق
 
 ; -----------------------------------------------------------------------------
 ;  9. شريط العنوان والتنقل بين الأقسام
@@ -743,13 +761,6 @@ p::  SendInput("^v")                   ; p = لصق
     else
         SendInput("+{F6}")             ; [ = القسم السابق
 }
-.::{
-    global AutoScrollState
-    if (AutoScrollState != 0)
-        ChangeScrollSpeed(1)
-    else
-        SendInput("{F6}")              ; . = القسم التالي
-}
 
 ; -----------------------------------------------------------------------------
 ;  10. التحكم بالسرعة والصوت
@@ -764,21 +775,17 @@ NumpadSub:: ChangeScrollSpeed(-1)      ; - = تبطيء السكرول
 
 ^0:: SendInput("^0")                   ; Ctrl+0 = إعادة ضبط التكبير
 
-^,::   SendInput("{Media_Prev}")
-^.::   SendInput("{Media_Next}")
-^Up::  SendInput("{Volume_Up}")
+^Up::   SendInput("{Volume_Up}")
 ^Down:: SendInput("{Volume_Down}")
-!0::   SendInput("{Volume_Mute}")
+!0::    SendInput("{Volume_Mute}")
 
 ; -----------------------------------------------------------------------------
 ;  منع الحروف غير المخصصة من الكتابة في Normal Mode (Modal Lockout)
 ; -----------------------------------------------------------------------------
 b::
-c::
 m::
 o::
 q::
-z::
 1::
 2::
 3::
@@ -792,8 +799,6 @@ z::
 Tab::
 Backspace::
 Delete::
-sc027:: ; ;
-sc028:: ; '
 sc02B:: ; \
 {
     return
@@ -802,33 +807,34 @@ sc02B:: ; \
 ; مساعدة
 +/:: {
     help := "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
-          . "🟢 VimWindows - المنظومة الشاملة الموحدة`n"
+          . "🟢 VimWindows - المنظومة الشاملة ثنائية اليدين`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`n"
           . "CapsLock: تبديل فوري للغة الإدخال (عربي ↔ إنجليزي)`n"
           . "Shift+CapsLock: تفعيل / تعطيل الحروف الكبيرة`n`n"
           . "Home Key: تفعيل / إيقاف NORMAL MODE بنقرة واحدة`n"
           . "Esc / i: الخروج الفوري لوضع الكتابة العادي`n`n"
-          . "🖱️ تحكم الماوس المباشر (WASD):`n"
-          . "  W / A / S / D  → أعلى / يسار / أسفل / يمين متوازن وسلس`n"
-          . "  زرين معاً (W+D / A+W) → سرعة توربو سريعة ومتوازنة`n"
-          . "  Space / Enter  → نقر أيسر`n"
-          . "  Shift+Space / r→ نقر أيمن`n"
-          . "  e / Ctrl+Space → نقر أوسط`n"
+          . "🖐️ تحكم الماوس باليد اليسرى:`n"
+          . "  W / A / S / D  → أعلى / يسار / أسفل / يمين`n"
+          . "  Z / X / C      → أيسر / بكرة (أوسط) / أيمن`n`n"
+          . "🖐️ تحكم الماوس باليد اليمنى (بجوار Enter):`n"
+          . "  P / L / ; / '  → أعلى / يسار / أسفل / يمين`n"
+          . "  , / . / /      → أيسر / بكرة (أوسط) / أيمن`n"
+          . "  زرين معاً      → سرعة توربو فائقة 50px!`n"
           . "  v              → وضع السحب والإفلات`n"
           . "  g              → شبكة القفز 3x3 (أو gg لأعلى الصفحة)`n"
-          . "  Shift (أثناء الحركة) → دقة بالبكسل`n"
-          . "  Ctrl (أثناء الحركة)  → توربو إضافي`n`n"
-          . "📜 التمرير والملاحة بنمط Vimium (HJKL):`n"
+          . "  Shift          → دقة بالبكسل`n"
+          . "  Ctrl           → توربو إضافي`n`n"
+          . "📜 التمرير والملاحة بنمط Vimium (HJK):`n"
           . "  j / k          → تمرير لأسفل / لأعلى`n"
-          . "  h / l          → تنقل لليسار / لليمين`n"
+          . "  h              → تنقل لليسار`n"
           . "  Shift+d / u    → نصف صفحة لأسفل / لأعلى`n"
           . "  gg / G         → أعلى / أسفل الصفحة`n"
           . "  f / F          → تلميحات العناصر (Hint Mode)`n"
           . "  PgDn / PgUp    → تمرير تلقائي مستمر`n`n"
           . "📑 التبويبات والبحث والحافظة:`n"
-          . "  t / x / X      → تبويب جديد / إغلاق / استعادة`n"
+          . "  t / Shift+x    → تبويب جديد / استعادة تبويب`n"
           . "  Shift+j / Shift+k → التبويب السابق / التالي`n"
-          . "  yy / p         → نسخ / لصق`n"
+          . "  yy / Shift+p   → نسخ / لصق`n"
           . "  / / Shift+s    → بحث داخل التطبيق`n"
           . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     MsgBox(help, "VimWindows", 0)
