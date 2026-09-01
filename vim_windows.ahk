@@ -169,9 +169,8 @@ ProcessMouseMovement() {
     if (dx != 0 && moveX == 0) moveX := dx
     if (dy != 0 && moveY == 0) moveY := dy
     
-    ; تحديث إحداثيات مؤشر الفأرة بسلاسة فائقة
-    MouseGetPos(&curX, &curY)
-    MouseMove(curX + moveX, curY + moveY, 0)
+    ; تحريك نسبي مباشر ونقي بدون أي متغيرات محلية غير معرفة
+    MouseMove(moveX, moveY, 0, "R")
     
     ; تسارع فيزيائي سلس
     if (MouseCurSpeed < MouseTopSpeed)
@@ -312,6 +311,7 @@ StartGridMode() {
     if (!activeHwnd)
         activeHwnd := WinGetID("Program Manager")
     
+    wX := 0, wY := 0, wW := 0, wH := 0
     WinGetPos(&wX, &wY, &wW, &wH, activeHwnd)
     if (wW < 100 || wH < 100) {
         wX := 0, wY := 0, wW := A_ScreenWidth, wH := A_ScreenHeight
@@ -417,6 +417,7 @@ StartHintMode(clickType := "Left") {
     if (!activeHwnd)
         return
     
+    winX := 0, winY := 0, winW := 0, winH := 0
     WinGetPos(&winX, &winY, &winW, &winH, activeHwnd)
     ctrlHwnds := WinGetControlsHwnd(activeHwnd)
     
@@ -425,6 +426,7 @@ StartHintMode(clickType := "Left") {
         try {
             if (!DllCall("IsWindowVisible", "Ptr", h))
                 continue
+            cX := 0, cY := 0, cW := 0, cH := 0
             ControlGetPos(&cX, &cY, &cW, &cH, h, activeHwnd)
             if (cW < 8 || cH < 8 || cX < 0 || cY < 0 || cX > winW || cY > winH)
                 continue
@@ -567,7 +569,7 @@ j:: {
 }
 k:: {
     StopAutoScroll()
-    SendInput("{WheelUp 2}")           ; k = تمرير للأعلى
+    SendInput("{WheelUp 2}")           ; k = تمرير لأعلى
 }
 h:: {
     StopAutoScroll()
