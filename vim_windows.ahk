@@ -6,7 +6,7 @@ CoordMode("Mouse", "Screen")
 SetCapsLockState("AlwaysOff")
 
 ; =============================================================================
-;  VimWindows - Universal Bilingual (AR/EN) Navigation & WASD Mouse Engine
+;  VimWindows - Direct Event-Driven Single-Mode & WASD Hyper Mouse Engine
 ;  Home / NumpadHome / Ctrl+Win = Toggle NORMAL MODE ↔ INSERT MODE
 ;  CapsLock = تبديل فوري للغة الإدخال (عربي ↔ إنجليزي) بنمط Mac & Pro
 ; =============================================================================
@@ -18,12 +18,6 @@ global AutoScrollState  := 0     ; 0 = متوقف, 1 = لأسفل, -1 = لأعل
 global ScrollSpeed      := 5     ; السرعة من 1 إلى 10 (الافتراضي 5)
 global ScrollAccum      := 0.0   ; مجمع الإزاحة الكسرية
 global IsDragging       := false
-
-; محرك الماوس الفيزيائي المباشر (Bilingual Physical Hardware Polling)
-global MouseCurSpeed    := 28.0
-global MouseBaseSpeed   := 28.0
-global MouseTopSpeed    := 90.0
-global MouseAccelFactor := 1.18
 
 ; كائن شارة NORMAL MODE في أعلى الشاشة
 global ModeGui          := ""
@@ -89,9 +83,8 @@ ShowMode() {
 ; =============================================================================
 
 SetVimState(state) {
-    global VimMode, IsDragging, MouseCurSpeed, MouseBaseSpeed
+    global VimMode, IsDragging
     VimMode := state
-    MouseCurSpeed := MouseBaseSpeed
     
     if (VimMode) {
         ; تفعيل وضع الملاحة والماوس
@@ -99,10 +92,8 @@ SetVimState(state) {
         ClearHints()
         ClearGrid()
         ShowMode()
-        SetTimer(ProcessMouseMovement, 16)
     } else {
         ; إيقاف والعودة لوضع الكتابة العادي
-        SetTimer(ProcessMouseMovement, 0)
         StopAutoScroll()
         ClearHints()
         ClearGrid()
@@ -127,61 +118,6 @@ NumpadHome::
 
 exitVim() {
     SetVimState(false)
-}
-
-; =============================================================================
-;  محرك الماوس المباشر الشامل (يدعم الكيبورد العربي والإنجليزي ومسح الهاردوير)
-; =============================================================================
-
-ProcessMouseMovement() {
-    global VimMode, MouseCurSpeed, MouseBaseSpeed, MouseTopSpeed, MouseAccelFactor
-    if (!VimMode) {
-        SetTimer(ProcessMouseMovement, 0)
-        return
-    }
-    
-    dx := 0, dy := 0
-    ; قراءة الحالة الفيزيائية للزر سواء كانت لغة الكيبورد عربية أو إنجليزية
-    ; W/ص = SC011, A/ش = SC01E, S/س = SC01F, D/ي = SC020
-    if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P"))
-        dx -= 1
-    if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P"))
-        dx += 1
-    if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P"))
-        dy -= 1
-    if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P"))
-        dy += 1
-    
-    if (dx == 0 && dy == 0) {
-        MouseCurSpeed := MouseBaseSpeed
-        return
-    }
-    
-    ; عند الضغط على زرين معاً (حركة قطرية): سرعة خارقة (Hyper Turbo)!
-    if (dx != 0 && dy != 0) {
-        speed := 130.0   ; سرعة خارقة جداً (130 بكسل/إطار = ~8000 بكسل/ثانية) لعبور الشاشة فوراً
-    } else {
-        speed := MouseCurSpeed
-    }
-    
-    ; وضع الدقة (Shift) ووضع التوربو (Ctrl)
-    if (GetKeyState("Shift", "P"))
-        speed := Max(2.0, speed * 0.12)
-    else if (GetKeyState("Ctrl", "P"))
-        speed := speed * 2.5
-    
-    moveX := Integer(dx * speed)
-    moveY := Integer(dy * speed)
-    if (dx != 0 && moveX == 0) moveX := dx
-    if (dy != 0 && moveY == 0) moveY := dy
-    
-    MouseMove(moveX, moveY, 0, "R")
-    
-    ; تسارع سلس للزر الفردي
-    if (dx == 0 || dy == 0) {
-        if (MouseCurSpeed < MouseTopSpeed)
-            MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccelFactor)
-    }
 }
 
 ToggleMouseDrag() {
@@ -543,22 +479,127 @@ Escape:: {
 i:: SetVimState(false)
 
 ; -----------------------------------------------------------------------------
-;  1. تحكم الماوس فائق السرعة والاستجابة (WASD + الأسهم + الحروف العربية)
+;  1. تحكم الماوس المباشر اللحظي (WASD + الأسهم) - استجابة فورية وحلقات While
 ; -----------------------------------------------------------------------------
-*w::
+
+; حركة لليسار (A / Left / ش)
 *a::
-*s::
-*d::
-*Up::
-*Down::
 *Left::
+*sc01E:: {
+    accel := 1.0
+    while (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P")) {
+        dy := 0
+        if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P"))
+            dy -= 1
+        if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P"))
+            dy += 1
+        
+        isDual := (dy != 0)
+        baseSpd := isDual ? 120.0 : (20.0 * accel)
+        
+        if GetKeyState("Shift", "P")
+            baseSpd := 2.0
+        else if GetKeyState("Ctrl", "P")
+            baseSpd := baseSpd * 2.5
+        
+        moveX := -Integer(baseSpd)
+        moveY := Integer(dy * baseSpd)
+        MouseMove(moveX, moveY, 0, "R")
+        
+        if (!isDual && accel < 3.5)
+            accel *= 1.05
+        Sleep(10)
+    }
+}
+
+; حركة لليمين (D / Right / ي)
+*d::
 *Right::
-*sc011::  ; W / ص
-*sc01E::  ; A / ش
-*sc01F::  ; S / س
-*sc020::  ; D / ي
-{
-    ; يتم استهلاك الزر وتحريك المؤشر فوراً بسلاسة عبر ProcessMouseMovement (16ms)
+*sc020:: {
+    accel := 1.0
+    while (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P")) {
+        dy := 0
+        if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P"))
+            dy -= 1
+        if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P"))
+            dy += 1
+        
+        isDual := (dy != 0)
+        baseSpd := isDual ? 120.0 : (20.0 * accel)
+        
+        if GetKeyState("Shift", "P")
+            baseSpd := 2.0
+        else if GetKeyState("Ctrl", "P")
+            baseSpd := baseSpd * 2.5
+        
+        moveX := Integer(baseSpd)
+        moveY := Integer(dy * baseSpd)
+        MouseMove(moveX, moveY, 0, "R")
+        
+        if (!isDual && accel < 3.5)
+            accel *= 1.05
+        Sleep(10)
+    }
+}
+
+; حركة للأعلى (W / Up / ص)
+*w::
+*Up::
+*sc011:: {
+    accel := 1.0
+    while (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P")) {
+        dx := 0
+        if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P"))
+            dx -= 1
+        if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P"))
+            dx += 1
+        
+        isDual := (dx != 0)
+        baseSpd := isDual ? 120.0 : (20.0 * accel)
+        
+        if GetKeyState("Shift", "P")
+            baseSpd := 2.0
+        else if GetKeyState("Ctrl", "P")
+            baseSpd := baseSpd * 2.5
+        
+        moveX := Integer(dx * baseSpd)
+        moveY := -Integer(baseSpd)
+        MouseMove(moveX, moveY, 0, "R")
+        
+        if (!isDual && accel < 3.5)
+            accel *= 1.05
+        Sleep(10)
+    }
+}
+
+; حركة للأسفل (S / Down / س)
+*s::
+*Down::
+*sc01F:: {
+    accel := 1.0
+    while (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P")) {
+        dx := 0
+        if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P"))
+            dx -= 1
+        if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P"))
+            dx += 1
+        
+        isDual := (dx != 0)
+        baseSpd := isDual ? 120.0 : (20.0 * accel)
+        
+        if GetKeyState("Shift", "P")
+            baseSpd := 2.0
+        else if GetKeyState("Ctrl", "P")
+            baseSpd := baseSpd * 2.5
+        
+        moveX := Integer(dx * baseSpd)
+        moveY := Integer(baseSpd)
+        MouseMove(moveX, moveY, 0, "R")
+        
+        if (!isDual && accel < 3.5)
+            accel *= 1.05
+        Sleep(10)
+    }
 }
 
 ; نقرات الماوس
@@ -762,8 +803,8 @@ Delete::
           . "Home Key: تفعيل / إيقاف NORMAL MODE بنقرة واحدة`n"
           . "Esc / i: الخروج الفوري لوضع الكتابة العادي`n`n"
           . "🖱️ تحكم الماوس المباشر (WASD):`n"
-          . "  W / A / S / D  → أعلى / يسار / أسفل / يمين`n"
-          . "  زرين معاً (W+D / A+W) → سرعة خارقة Hyper Turbo!`n"
+          . "  W / A / S / D  → أعلى / يسار / أسفل / يمين فوري`n"
+          . "  زرين معاً (W+D / A+W) → سرعة خارقة Hyper Turbo 120px!`n"
           . "  Space / Enter  → نقر أيسر`n"
           . "  Shift+Space / r→ نقر أيمن`n"
           . "  e / Ctrl+Space → نقر أوسط`n"
