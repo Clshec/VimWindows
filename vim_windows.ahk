@@ -19,7 +19,7 @@ global ScrollSpeed      := 5     ; السرعة من 1 إلى 10 (الافترا
 global ScrollAccum      := 0.0   ; مجمع الإزاحة الكسرية
 global IsDragging       := false
 
-; محرك الماوس الفيزيائي المباشر (Direct Win32 Hardware Polling)
+; محرك الماوس الفيزيائي المباشر (Direct Native Mouse Engine)
 global MouseCurSpeed    := 28.0
 global MouseBaseSpeed   := 28.0
 global MouseTopSpeed    := 120.0
@@ -129,7 +129,7 @@ exitVim() {
 }
 
 ; =============================================================================
-;  محرك الماوس المباشر (Direct WASD Hardware Polling via Win32 API)
+;  محرك الماوس المباشر (Direct Native WASD Mouse Movement)
 ; =============================================================================
 
 ProcessMouseMovement() {
@@ -169,12 +169,9 @@ ProcessMouseMovement() {
     if (dx != 0 && moveX == 0) moveX := dx
     if (dy != 0 && moveY == 0) moveY := dy
     
-    ; تحديث إحداثيات مؤشر الفأرة مباشرة عبر Win32 API
-    pt := Buffer(8, 0)
-    DllCall("GetCursorPos", "Ptr", pt.Ptr)
-    curX := NumGet(pt, 0, "Int")
-    curY := NumGet(pt, 4, "Int")
-    DllCall("SetCursorPos", "Int", curX + moveX, "Int", curY + moveY)
+    ; تحديث إحداثيات مؤشر الفأرة بسلاسة فائقة
+    MouseGetPos(&curX, &curY)
+    MouseMove(curX + moveX, curY + moveY, 0)
     
     ; تسارع فيزيائي سلس
     if (MouseCurSpeed < MouseTopSpeed)
@@ -362,7 +359,7 @@ ProcessGridChoice(char, hook, gridCenters) {
         choice := Integer(char)
         if (gridCenters.Has(choice)) {
             pt := gridCenters[choice]
-            DllCall("SetCursorPos", "Int", pt.x, "Int", pt.y)
+            MouseMove(pt.x, pt.y, 0)
         }
     }
     hook.Stop()
@@ -495,7 +492,7 @@ CheckHintMatch(typed, hook, clickType) {
         hook.Stop()
         ClearHints()
         
-        DllCall("SetCursorPos", "Int", el.centerX, "Int", el.centerY)
+        MouseMove(el.centerX, el.centerY, 0)
         if (clickType == "Right")
             Click("Right")
         else
@@ -570,7 +567,7 @@ j:: {
 }
 k:: {
     StopAutoScroll()
-    SendInput("{WheelUp 2}")           ; k = تمرير لأعلى
+    SendInput("{WheelUp 2}")           ; k = تمرير للأعلى
 }
 h:: {
     StopAutoScroll()
@@ -638,7 +635,7 @@ x::  SendInput("^w")                   ; x = إغلاق تبويب
 ; -----------------------------------------------------------------------------
 ;  7. البحث والتحديث
 ; -----------------------------------------------------------------------------
-r::  Click("Right")                    ; r = نقر أيمن (أو Shift+r لإعادة التحميل)
+r::  Click("Right")                    ; r = نقر أيمن
 +r:: SendInput("{F5}")                 ; Shift+r = إعادة تحميل الصفحة (Reload)
 /:: {
     SetVimState(false)
