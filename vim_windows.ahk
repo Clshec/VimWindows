@@ -1,12 +1,13 @@
 ﻿#Requires AutoHotkey v2.0
 #SingleInstance Force
+#Warn All, Off
 Persistent(true)
 InstallKeybdHook()
 CoordMode("Mouse", "Screen")
 SetCapsLockState("AlwaysOff")
 
 ; =============================================================================
-;  VimWindows - Direct Event-Driven Single-Mode & WASD Hyper Mouse Engine
+;  VimWindows - Balanced Responsive Single-Mode & WASD Mouse Engine
 ;  Home / NumpadHome / Ctrl+Win = Toggle NORMAL MODE ↔ INSERT MODE
 ;  CapsLock = تبديل فوري للغة الإدخال (عربي ↔ إنجليزي) بنمط Mac & Pro
 ; =============================================================================
@@ -479,7 +480,7 @@ Escape:: {
 i:: SetVimState(false)
 
 ; -----------------------------------------------------------------------------
-;  1. تحكم الماوس المباشر اللحظي (WASD + الأسهم) - استجابة فورية وحلقات While
+;  1. تحكم الماوس المباشر اللحظي المتوازن (WASD + الأسهم)
 ; -----------------------------------------------------------------------------
 
 ; حركة لليسار (A / Left / ش)
@@ -487,27 +488,28 @@ i:: SetVimState(false)
 *Left::
 *sc01E:: {
     accel := 1.0
-    while (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P")) {
+    MouseMove(-12, 0, 0, "R")
+    while (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("vk41", "P") || GetKeyState("a", "P")) {
         dy := 0
-        if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P"))
+        if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("vk57", "P") || GetKeyState("w", "P"))
             dy -= 1
-        if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P"))
+        if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("vk53", "P") || GetKeyState("s", "P"))
             dy += 1
         
         isDual := (dy != 0)
-        baseSpd := isDual ? 120.0 : (20.0 * accel)
+        baseSpd := isDual ? 65.0 : (14.0 * accel)
         
         if GetKeyState("Shift", "P")
-            baseSpd := 2.0
+            baseSpd := 1.5
         else if GetKeyState("Ctrl", "P")
-            baseSpd := baseSpd * 2.5
+            baseSpd := baseSpd * 1.8
         
         moveX := -Integer(baseSpd)
         moveY := Integer(dy * baseSpd)
         MouseMove(moveX, moveY, 0, "R")
         
-        if (!isDual && accel < 3.5)
-            accel *= 1.05
+        if (!isDual && accel < 2.5)
+            accel *= 1.04
         Sleep(10)
     }
 }
@@ -517,27 +519,28 @@ i:: SetVimState(false)
 *Right::
 *sc020:: {
     accel := 1.0
-    while (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P")) {
+    MouseMove(12, 0, 0, "R")
+    while (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("vk44", "P") || GetKeyState("d", "P")) {
         dy := 0
-        if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P"))
+        if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("vk57", "P") || GetKeyState("w", "P"))
             dy -= 1
-        if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P"))
+        if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("vk53", "P") || GetKeyState("s", "P"))
             dy += 1
         
         isDual := (dy != 0)
-        baseSpd := isDual ? 120.0 : (20.0 * accel)
+        baseSpd := isDual ? 65.0 : (14.0 * accel)
         
         if GetKeyState("Shift", "P")
-            baseSpd := 2.0
+            baseSpd := 1.5
         else if GetKeyState("Ctrl", "P")
-            baseSpd := baseSpd * 2.5
+            baseSpd := baseSpd * 1.8
         
         moveX := Integer(baseSpd)
         moveY := Integer(dy * baseSpd)
         MouseMove(moveX, moveY, 0, "R")
         
-        if (!isDual && accel < 3.5)
-            accel *= 1.05
+        if (!isDual && accel < 2.5)
+            accel *= 1.04
         Sleep(10)
     }
 }
@@ -547,27 +550,28 @@ i:: SetVimState(false)
 *Up::
 *sc011:: {
     accel := 1.0
-    while (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P")) {
+    MouseMove(0, -12, 0, "R")
+    while (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("vk57", "P") || GetKeyState("w", "P")) {
         dx := 0
-        if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P"))
+        if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("vk41", "P") || GetKeyState("a", "P"))
             dx -= 1
-        if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P"))
+        if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("vk44", "P") || GetKeyState("d", "P"))
             dx += 1
         
         isDual := (dx != 0)
-        baseSpd := isDual ? 120.0 : (20.0 * accel)
+        baseSpd := isDual ? 65.0 : (14.0 * accel)
         
         if GetKeyState("Shift", "P")
-            baseSpd := 2.0
+            baseSpd := 1.5
         else if GetKeyState("Ctrl", "P")
-            baseSpd := baseSpd * 2.5
+            baseSpd := baseSpd * 1.8
         
         moveX := Integer(dx * baseSpd)
         moveY := -Integer(baseSpd)
         MouseMove(moveX, moveY, 0, "R")
         
-        if (!isDual && accel < 3.5)
-            accel *= 1.05
+        if (!isDual && accel < 2.5)
+            accel *= 1.04
         Sleep(10)
     }
 }
@@ -577,27 +581,28 @@ i:: SetVimState(false)
 *Down::
 *sc01F:: {
     accel := 1.0
-    while (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P")) {
+    MouseMove(0, 12, 0, "R")
+    while (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("vk53", "P") || GetKeyState("s", "P")) {
         dx := 0
-        if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P"))
+        if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("vk41", "P") || GetKeyState("a", "P"))
             dx -= 1
-        if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P"))
+        if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("vk44", "P") || GetKeyState("d", "P"))
             dx += 1
         
         isDual := (dx != 0)
-        baseSpd := isDual ? 120.0 : (20.0 * accel)
+        baseSpd := isDual ? 65.0 : (14.0 * accel)
         
         if GetKeyState("Shift", "P")
-            baseSpd := 2.0
+            baseSpd := 1.5
         else if GetKeyState("Ctrl", "P")
-            baseSpd := baseSpd * 2.5
+            baseSpd := baseSpd * 1.8
         
         moveX := Integer(dx * baseSpd)
         moveY := Integer(baseSpd)
         MouseMove(moveX, moveY, 0, "R")
         
-        if (!isDual && accel < 3.5)
-            accel *= 1.05
+        if (!isDual && accel < 2.5)
+            accel *= 1.04
         Sleep(10)
     }
 }
@@ -787,9 +792,10 @@ z::
 Tab::
 Backspace::
 Delete::
-;::
-'::
-\:: {
+sc027:: ; ;
+sc028:: ; '
+sc02B:: ; \
+{
     return
 }
 
@@ -803,8 +809,8 @@ Delete::
           . "Home Key: تفعيل / إيقاف NORMAL MODE بنقرة واحدة`n"
           . "Esc / i: الخروج الفوري لوضع الكتابة العادي`n`n"
           . "🖱️ تحكم الماوس المباشر (WASD):`n"
-          . "  W / A / S / D  → أعلى / يسار / أسفل / يمين فوري`n"
-          . "  زرين معاً (W+D / A+W) → سرعة خارقة Hyper Turbo 120px!`n"
+          . "  W / A / S / D  → أعلى / يسار / أسفل / يمين متوازن وسلس`n"
+          . "  زرين معاً (W+D / A+W) → سرعة توربو سريعة ومتوازنة`n"
           . "  Space / Enter  → نقر أيسر`n"
           . "  Shift+Space / r→ نقر أيمن`n"
           . "  e / Ctrl+Space → نقر أوسط`n"
