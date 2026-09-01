@@ -6,7 +6,7 @@ CoordMode("Mouse", "Screen")
 SetCapsLockState("AlwaysOff")
 
 ; =============================================================================
-;  VimWindows - 100% Native Single-Mode Navigation & WASD Mouse Engine
+;  VimWindows - Universal Bilingual (AR/EN) Navigation & WASD Mouse Engine
 ;  Home / NumpadHome / Ctrl+Win = Toggle NORMAL MODE ↔ INSERT MODE
 ;  CapsLock = تبديل فوري للغة الإدخال (عربي ↔ إنجليزي) بنمط Mac & Pro
 ; =============================================================================
@@ -19,10 +19,11 @@ global ScrollSpeed      := 5     ; السرعة من 1 إلى 10 (الافترا
 global ScrollAccum      := 0.0   ; مجمع الإزاحة الكسرية
 global IsDragging       := false
 
-; محرك الماوس الفيزيائي المباشر (Direct Responsive Mouse Engine)
-global MouseKeys        := Map("w", false, "a", false, "s", false, "d", false, "up", false, "left", false, "down", false, "right", false)
-global MouseActive      := false
-global MouseBaseSpeed   := 25.0
+; محرك الماوس الفيزيائي المباشر (Bilingual Physical Hardware Polling)
+global MouseCurSpeed    := 28.0
+global MouseBaseSpeed   := 28.0
+global MouseTopSpeed    := 90.0
+global MouseAccelFactor := 1.18
 
 ; كائن شارة NORMAL MODE في أعلى الشاشة
 global ModeGui          := ""
@@ -87,19 +88,10 @@ ShowMode() {
 ;  إدارة تفعيل وإيقاف الوضع بنقرة واحدة (Single-Mode Toggle)
 ; =============================================================================
 
-ResetMouseKeys() {
-    global MouseKeys, MouseActive
-    for k in MouseKeys {
-        MouseKeys[k] := false
-    }
-    MouseActive := false
-    SetTimer(PerformMousePhysics, 0)
-}
-
 SetVimState(state) {
-    global VimMode, IsDragging
+    global VimMode, IsDragging, MouseCurSpeed, MouseBaseSpeed
     VimMode := state
-    ResetMouseKeys()
+    MouseCurSpeed := MouseBaseSpeed
     
     if (VimMode) {
         ; تفعيل وضع الملاحة والماوس
@@ -107,8 +99,10 @@ SetVimState(state) {
         ClearHints()
         ClearGrid()
         ShowMode()
+        SetTimer(ProcessMouseMovement, 16)
     } else {
         ; إيقاف والعودة لوضع الكتابة العادي
+        SetTimer(ProcessMouseMovement, 0)
         StopAutoScroll()
         ClearHints()
         ClearGrid()
@@ -136,63 +130,43 @@ exitVim() {
 }
 
 ; =============================================================================
-;  محرك الماوس الفوري (Instant Single-Key & 100x Dual-Key Turbo Jet)
+;  محرك الماوس المباشر الشامل (يدعم الكيبورد العربي والإنجليزي ومسح الهاردوير)
 ; =============================================================================
 
-SetDirState(key, state) {
-    global MouseKeys, MouseActive, VimMode
-    if (!VimMode)
-        return
-    
-    MouseKeys[key] := state
-    
-    hasActive := false
-    for k, v in MouseKeys {
-        if (v) {
-            hasActive := true
-            break
-        }
-    }
-    
-    if (hasActive) {
-        ; تحريك فوري لحظي عند أول ضغطة
-        PerformMousePhysics()
-        if (!MouseActive) {
-            MouseActive := true
-            SetTimer(PerformMousePhysics, 16)
-        }
-    } else {
-        MouseActive := false
-        SetTimer(PerformMousePhysics, 0)
-    }
-}
-
-PerformMousePhysics() {
-    global MouseKeys, VimMode, MouseBaseSpeed
+ProcessMouseMovement() {
+    global VimMode, MouseCurSpeed, MouseBaseSpeed, MouseTopSpeed, MouseAccelFactor
     if (!VimMode) {
-        SetTimer(PerformMousePhysics, 0)
+        SetTimer(ProcessMouseMovement, 0)
         return
     }
     
     dx := 0, dy := 0
-    if (MouseKeys["a"] || MouseKeys["left"])  dx -= 1
-    if (MouseKeys["d"] || MouseKeys["right"]) dx += 1
-    if (MouseKeys["w"] || MouseKeys["up"])    dy -= 1
-    if (MouseKeys["s"] || MouseKeys["down"])  dy += 1
+    ; قراءة الحالة الفيزيائية للزر سواء كانت لغة الكيبورد عربية أو إنجليزية
+    ; W/ص = SC011, A/ش = SC01E, S/س = SC01F, D/ي = SC020
+    if (GetKeyState("sc01E", "P") || GetKeyState("Left", "P") || GetKeyState("a", "P"))
+        dx -= 1
+    if (GetKeyState("sc020", "P") || GetKeyState("Right", "P") || GetKeyState("d", "P"))
+        dx += 1
+    if (GetKeyState("sc011", "P") || GetKeyState("Up", "P") || GetKeyState("w", "P"))
+        dy -= 1
+    if (GetKeyState("sc01F", "P") || GetKeyState("Down", "P") || GetKeyState("s", "P"))
+        dy += 1
     
-    if (dx == 0 && dy == 0)
+    if (dx == 0 && dy == 0) {
+        MouseCurSpeed := MouseBaseSpeed
         return
+    }
     
-    ; عند الضغط على زرين معاً (حركة قطرية): تتضاعف السرعة 100 ضعف!
+    ; عند الضغط على زرين معاً (حركة قطرية): سرعة خارقة (Hyper Turbo)!
     if (dx != 0 && dy != 0) {
-        speed := MouseBaseSpeed * 100.0   ; 🚀 طيران نفاث 100x عند ضغط زرين معاً
+        speed := 130.0   ; سرعة خارقة جداً (130 بكسل/إطار = ~8000 بكسل/ثانية) لعبور الشاشة فوراً
     } else {
-        speed := MouseBaseSpeed           ; سرعة الزر الفردي العادية السلسة
+        speed := MouseCurSpeed
     }
     
     ; وضع الدقة (Shift) ووضع التوربو (Ctrl)
     if (GetKeyState("Shift", "P"))
-        speed := Max(2.0, speed * 0.10)
+        speed := Max(2.0, speed * 0.12)
     else if (GetKeyState("Ctrl", "P"))
         speed := speed * 2.5
     
@@ -201,8 +175,13 @@ PerformMousePhysics() {
     if (dx != 0 && moveX == 0) moveX := dx
     if (dy != 0 && moveY == 0) moveY := dy
     
-    ; تحريك نسبي مباشر وفوري 100%
     MouseMove(moveX, moveY, 0, "R")
+    
+    ; تسارع سلس للزر الفردي
+    if (dx == 0 || dy == 0) {
+        if (MouseCurSpeed < MouseTopSpeed)
+            MouseCurSpeed := Min(MouseTopSpeed, MouseCurSpeed * MouseAccelFactor)
+    }
 }
 
 ToggleMouseDrag() {
@@ -564,27 +543,23 @@ Escape:: {
 i:: SetVimState(false)
 
 ; -----------------------------------------------------------------------------
-;  1. تحكم الماوس فائق السرعة والاستجابة الفورية (WASD والأسهم)
+;  1. تحكم الماوس فائق السرعة والاستجابة (WASD + الأسهم + الحروف العربية)
 ; -----------------------------------------------------------------------------
-*w:: SetDirState("w", true)
-*w Up:: SetDirState("w", false)
-*Up:: SetDirState("up", true)
-*Up Up:: SetDirState("up", false)
-
-*a:: SetDirState("a", true)
-*a Up:: SetDirState("a", false)
-*Left:: SetDirState("left", true)
-*Left Up:: SetDirState("left", false)
-
-*s:: SetDirState("s", true)
-*s Up:: SetDirState("s", false)
-*Down:: SetDirState("down", true)
-*Down Up:: SetDirState("down", false)
-
-*d:: SetDirState("d", true)
-*d Up:: SetDirState("d", false)
-*Right:: SetDirState("right", true)
-*Right Up:: SetDirState("right", false)
+*w::
+*a::
+*s::
+*d::
+*Up::
+*Down::
+*Left::
+*Right::
+*sc011::  ; W / ص
+*sc01E::  ; A / ش
+*sc01F::  ; S / س
+*sc020::  ; D / ي
+{
+    ; يتم استهلاك الزر وتحريك المؤشر فوراً بسلاسة عبر ProcessMouseMovement (16ms)
+}
 
 ; نقرات الماوس
 *Space::  Click()                       ; Space = نقر أيسر
@@ -600,19 +575,23 @@ i:: SetVimState(false)
 ; -----------------------------------------------------------------------------
 ;  2. اختصارات التمرير والملاحة بنمط Vimium الأصلي (HJKL)
 ; -----------------------------------------------------------------------------
-j:: {
+j::
+sc024:: {
     StopAutoScroll()
     SendInput("{WheelDown 2}")         ; j = تمرير لأسفل
 }
-k:: {
+k::
+sc025:: {
     StopAutoScroll()
     SendInput("{WheelUp 2}")           ; k = تمرير لأعلى
 }
-h:: {
+h::
+sc023:: {
     StopAutoScroll()
     SendInput("{Left 2}")              ; h = تنقل لليسار
 }
-l:: {
+l::
+sc026:: {
     StopAutoScroll()
     SendInput("{Right 2}")             ; l = تنقل لليمين بأمان
 }
@@ -784,7 +763,7 @@ Delete::
           . "Esc / i: الخروج الفوري لوضع الكتابة العادي`n`n"
           . "🖱️ تحكم الماوس المباشر (WASD):`n"
           . "  W / A / S / D  → أعلى / يسار / أسفل / يمين`n"
-          . "  زرين معاً (W+D / A+W) → سرعة نفاثة 100x!`n"
+          . "  زرين معاً (W+D / A+W) → سرعة خارقة Hyper Turbo!`n"
           . "  Space / Enter  → نقر أيسر`n"
           . "  Shift+Space / r→ نقر أيمن`n"
           . "  e / Ctrl+Space → نقر أوسط`n"
